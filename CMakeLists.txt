@@ -8,6 +8,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 add_executable(OctoZone
     src/main.cpp
     src/Grid.cpp
+    src/ConsoleRenderer.cpp
 )
 
 target_include_directories(OctoZone PRIVATE

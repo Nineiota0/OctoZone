@@ -19,13 +19,9 @@ namespace octozone
             Tile getTile(Position position) const;
             void setTile(Position position, Tile tile);
 
-            void print() const;
-
         private:
             int rows_;
             int cols_;
             std::vector<std::vector<Tile>> tiles_;
-        
-            char tileToChar(Tile tile) const;
     };
 }
