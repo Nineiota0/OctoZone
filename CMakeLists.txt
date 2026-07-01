@@ -9,6 +9,7 @@ add_executable(OctoZone
     src/main.cpp
     src/Grid.cpp
     src/ConsoleRenderer.cpp
+    src/Game.cpp
 )
 
 target_include_directories(OctoZone PRIVATE
