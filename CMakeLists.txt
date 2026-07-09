@@ -10,6 +10,7 @@ add_executable(OctoZone
     src/Grid.cpp
     src/ConsoleRenderer.cpp
     src/Game.cpp
+    src/Pathfinder.cpp
 )
 
 target_include_directories(OctoZone PRIVATE
