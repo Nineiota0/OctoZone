@@ -4,22 +4,24 @@
 #include "octozone/Grid.hpp"
 #include "octozone/Octopus.hpp"
 
-namespace octozone 
+namespace octozone
 {
 
-    class Game 
+    class Game
     {
-        public:
-            Game();
-        
-            void run();
-        
-        private:
-            Grid grid_;
-            ConsoleRenderer renderer_;
-            Octopus octopus_;
-        
-            void initializeMap();
+    public:
+        Game();
+
+        void run();
+
+    private:
+        Grid grid_;
+        ConsoleRenderer renderer_;
+        Octopus octopus_;
+
+        void initializeMap();
+        void update();
+        void render();
     };
 
 }

@@ -1,7 +1,6 @@
 #include <iostream>
 
 #include "octozone/Game.hpp"
-#include "octozone/Octopus.hpp"
 #include "octozone/Pathfinder.hpp"
 
 namespace octozone
@@ -24,20 +23,31 @@ namespace octozone
 
     void Game::run()
     {
+        render();  // Show the initial state.
+    
         while (octopus_.hasPath())
         {
-            Position oldPosition = octopus_.getPosition();
-        
-            octopus_.moveOneStep();
-        
-            Position newPosition = octopus_.getPosition();
-        
-            grid_.setTile(oldPosition, Tile::Empty);
-            grid_.setTile(newPosition, Tile::Octopus);
-        
-            renderer_.draw(grid_);
-            std::cout << '\n';
+            update();
+            render();
         }
+    }
+
+    void Game::update()
+    {
+        Position oldPosition = octopus_.getPosition();
+
+        octopus_.moveOneStep();
+
+        Position newPosition = octopus_.getPosition();
+
+        grid_.setTile(oldPosition, Tile::Empty);
+        grid_.setTile(newPosition, Tile::Octopus);
+    }
+
+    void Game::render()
+    {
+        renderer_.draw(grid_);
+        std::cout << '\n';
     }
 
     void Game::initializeMap()
