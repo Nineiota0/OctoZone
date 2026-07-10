@@ -34,12 +34,12 @@ namespace octozone
             }
         };
 
-        int heuristic(Position a, Position b)
+        int heuristic(const Position& a, const Position& b)
         {
             return std::abs(a.row - b.row) + std::abs(a.col - b.col);
         }
 
-        std::vector<Position> getNeighbors(Position position)
+        std::vector<Position> getNeighbors(const Position& position)
         {
             return {
                 {position.row - 1, position.col},
@@ -49,7 +49,7 @@ namespace octozone
             };
         }
 
-        int key(Position position, int cols)
+        int key(const Position& position, int cols)
         {
             return position.row * cols + position.col;
         }
@@ -71,6 +71,13 @@ namespace octozone
             }
 
             std::reverse(path.begin(), path.end());
+
+            // Remove the starting position since the octopus is already there.
+            if (!path.empty())
+            {
+                path.erase(path.begin());
+            }
+
             return path;
         }
     }

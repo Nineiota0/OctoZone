@@ -2,6 +2,7 @@
 
 #include "octozone/ConsoleRenderer.hpp"
 #include "octozone/Grid.hpp"
+#include "octozone/Octopus.hpp"
 
 namespace octozone 
 {
@@ -16,6 +17,7 @@ namespace octozone
         private:
             Grid grid_;
             ConsoleRenderer renderer_;
+            Octopus octopus_;
         
             void initializeMap();
     };
