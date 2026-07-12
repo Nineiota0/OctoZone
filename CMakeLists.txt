@@ -12,6 +12,7 @@ add_executable(OctoZone
     src/Game.cpp
     src/Pathfinder.cpp
     src/Octopus.cpp
+    src/Shark.cpp
 )
 
 target_include_directories(OctoZone PRIVATE

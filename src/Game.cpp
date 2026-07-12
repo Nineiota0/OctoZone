@@ -8,7 +8,8 @@ namespace octozone
     Game::Game()
         : grid_(10, 10),
           renderer_(),
-          octopus_({9, 0}, {0, 9})
+          octopus_({9, 0}, {0, 9}),
+          shark_({2, 6}, Path{{2, 6}, {2, 7}, {2, 8}, {2, 7}})
     {
         initializeMap();
 
@@ -24,7 +25,7 @@ namespace octozone
     void Game::run()
     {
         render();  // Show the initial state.
-    
+
         while (octopus_.hasPath())
         {
             update();
@@ -34,14 +35,27 @@ namespace octozone
 
     void Game::update()
     {
-        Position oldPosition = octopus_.getPosition();
-
+        Position oldOctopusPosition = octopus_.getPosition();
+    
         octopus_.moveOneStep();
-
-        Position newPosition = octopus_.getPosition();
-
-        grid_.setTile(oldPosition, Tile::Empty);
-        grid_.setTile(newPosition, Tile::Octopus);
+    
+        Position newOctopusPosition = octopus_.getPosition();
+    
+        grid_.setTile(oldOctopusPosition, Tile::Empty);
+        grid_.setTile(newOctopusPosition, Tile::Octopus);
+    
+        Position oldSharkPosition = shark_.getPosition();
+    
+        shark_.moveOneStep();
+    
+        Position newSharkPosition = shark_.getPosition();
+    
+        if (oldSharkPosition != octopus_.getPosition())
+        {
+            grid_.setTile(oldSharkPosition, Tile::Empty);
+        }
+    
+        grid_.setTile(newSharkPosition, Tile::Shark);
     }
 
     void Game::render()
@@ -52,13 +66,13 @@ namespace octozone
 
     void Game::initializeMap()
     {
-        grid_.setTile({9, 0}, Tile::Octopus);
-        grid_.setTile({0, 9}, Tile::Goal);
+        grid_.setTile(octopus_.getPosition(), Tile::Octopus);
+        grid_.setTile(octopus_.getGoal(), Tile::Goal);
 
         grid_.setTile({4, 3}, Tile::Wall);
         grid_.setTile({4, 4}, Tile::Wall);
         grid_.setTile({4, 5}, Tile::Wall);
 
-        grid_.setTile({2, 6}, Tile::Shark);
+        grid_.setTile(shark_.getPosition(), Tile::Shark);
     }
 }

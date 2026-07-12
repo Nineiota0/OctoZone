@@ -3,6 +3,7 @@
 #include "octozone/ConsoleRenderer.hpp"
 #include "octozone/Grid.hpp"
 #include "octozone/Octopus.hpp"
+#include "octozone/Shark.hpp"
 
 namespace octozone
 {
@@ -18,6 +19,7 @@ namespace octozone
         Grid grid_;
         ConsoleRenderer renderer_;
         Octopus octopus_;
+        Shark shark_;
 
         void initializeMap();
         void update();
