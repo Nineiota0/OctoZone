@@ -1,0 +1,17 @@
+#pragma once
+
+#include "octozone/Grid.hpp"
+#include "octozone/Position.hpp"
+
+namespace octozone
+{
+    class VisionSystem
+    {
+    public:
+        static bool canDetect(
+            const Grid& grid,
+            const Position& sharkPosition,
+            const Position& octopusPosition,
+            int range);
+    };
+}

@@ -56,6 +56,15 @@ namespace octozone
         }
     
         grid_.setTile(newSharkPosition, Tile::Shark);
+    
+        if (VisionSystem::canDetect(
+                grid_,
+                shark_.getPosition(),
+                octopus_.getPosition(),
+                3))
+        {
+            std::cout << "Octopus detected! Game over.\n";
+        }
     }
 
     void Game::render()

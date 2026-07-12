@@ -4,6 +4,7 @@
 #include "octozone/Grid.hpp"
 #include "octozone/Octopus.hpp"
 #include "octozone/Shark.hpp"
+#include "octozone/VisionSystem.hpp"
 
 namespace octozone
 {
