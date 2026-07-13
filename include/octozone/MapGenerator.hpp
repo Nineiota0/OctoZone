@@ -22,5 +22,7 @@ namespace octozone
 
     private:
         static Position randomPosition(int rows, int cols);
+        static Position randomEdgePosition(int rows, int cols);
+        static int manhattanDistance(const Position& a, const Position& b);
     };
 }
