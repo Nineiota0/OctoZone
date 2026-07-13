@@ -1,6 +1,6 @@
-#include <iostream>
 #include <chrono>
 #include <cstdlib>
+#include <iostream>
 #include <thread>
 
 #include "octozone/Game.hpp"
@@ -30,20 +30,20 @@ namespace octozone
     {
         while (!gameOver_ && octopus_.hasPath())
         {
-            std::system("cls"); // Windows clear screen
-        
+            std::system("cls");
+
             render();
             update();
-        
+
             checkLoseCondition();
             checkWinCondition();
-        
+
             std::this_thread::sleep_for(std::chrono::milliseconds(400));
         }
-    
+
         std::system("cls");
         render();
-    
+
         if (playerWon_)
         {
             std::cout << "Octopus escaped! You win!\n";
@@ -56,54 +56,23 @@ namespace octozone
 
     void Game::update()
     {
-        Position oldOctopusPosition = octopus_.getPosition();
-    
         octopus_.moveOneStep();
-    
-        Position newOctopusPosition = octopus_.getPosition();
-    
-        grid_.setTile(oldOctopusPosition, Tile::Empty);
-        grid_.setTile(newOctopusPosition, Tile::Octopus);
-    
-        Position oldSharkPosition = shark_.getPosition();
-    
         shark_.moveOneStep();
-    
-        Position newSharkPosition = shark_.getPosition();
-    
-        if (oldSharkPosition != octopus_.getPosition())
-        {
-            grid_.setTile(oldSharkPosition, Tile::Empty);
-        }
-    
-        grid_.setTile(newSharkPosition, Tile::Shark);
-    
-        if (VisionSystem::canDetect(
-                grid_,
-                shark_.getPosition(),
-                octopus_.getPosition(),
-                3))
-        {
-            std::cout << "Octopus detected! Game over.\n";
-        }
     }
 
     void Game::render()
     {
-        renderer_.draw(grid_);
+        renderer_.draw(grid_, octopus_, shark_);
         std::cout << '\n';
     }
 
     void Game::initializeMap()
     {
-        grid_.setTile(octopus_.getPosition(), Tile::Octopus);
         grid_.setTile(octopus_.getGoal(), Tile::Goal);
 
         grid_.setTile({4, 3}, Tile::Wall);
         grid_.setTile({4, 4}, Tile::Wall);
         grid_.setTile({4, 5}, Tile::Wall);
-
-        grid_.setTile(shark_.getPosition(), Tile::Shark);
     }
 
     void Game::checkWinCondition()

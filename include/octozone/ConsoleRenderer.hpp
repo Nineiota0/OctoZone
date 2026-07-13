@@ -1,17 +1,22 @@
 #pragma once
 
 #include "octozone/Grid.hpp"
+#include "octozone/Octopus.hpp"
+#include "octozone/Shark.hpp"
 
-namespace octozone 
+namespace octozone
 {
 
-    class ConsoleRenderer 
+    class ConsoleRenderer
     {
-        public:
-            void draw(const Grid& grid) const;
-        
-        private:
-            char tileToChar(Tile tile) const;
+    public:
+        void draw(
+            const Grid& grid,
+            const Octopus& octopus,
+            const Shark& shark) const;
+
+    private:
+        char tileToChar(Tile tile) const;
     };
 
 }
