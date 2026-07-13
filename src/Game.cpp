@@ -1,4 +1,7 @@
 #include <iostream>
+#include <chrono>
+#include <cstdlib>
+#include <thread>
 
 #include "octozone/Game.hpp"
 #include "octozone/Pathfinder.hpp"
@@ -25,17 +28,22 @@ namespace octozone
 
     void Game::run()
     {
-        render();
-
         while (!gameOver_ && octopus_.hasPath())
         {
-            update();
+            std::system("cls"); // Windows clear screen
+        
             render();
-
+            update();
+        
             checkLoseCondition();
             checkWinCondition();
+        
+            std::this_thread::sleep_for(std::chrono::milliseconds(400));
         }
-
+    
+        std::system("cls");
+        render();
+    
         if (playerWon_)
         {
             std::cout << "Octopus escaped! You win!\n";
