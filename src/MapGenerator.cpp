@@ -44,14 +44,16 @@ namespace octozone
                 }
             }
 
-            Position sharkStart{2, 6};
-
-            Path sharkPatrolRoute{
-                sharkStart,
-                Position{2, 7},
-                Position{2, 8},
-                Position{2, 7}
-            };
+            Position sharkStart = randomPosition(rows, cols);
+                    
+            while (sharkStart == octopusStart ||
+                   sharkStart == goal ||
+                   grid.getTile(sharkStart) == Tile::Wall)
+            {
+                sharkStart = randomPosition(rows, cols);
+            }
+            
+            Path sharkPatrolRoute = createSharkPatrolRoute(grid, sharkStart);
 
             grid.setTile(goal, Tile::Goal);
 
@@ -107,5 +109,49 @@ namespace octozone
     int MapGenerator::manhattanDistance(const Position& a, const Position& b)
     {
         return std::abs(a.row - b.row) + std::abs(a.col - b.col);
+    }
+
+    Path MapGenerator::createSharkPatrolRoute(
+        const Grid& grid,
+        const Position& sharkStart)
+    {
+        Path route;
+        route.push_back(sharkStart);
+
+        const Position directions[] = {
+            {-1, 0}, // up
+            {1, 0},  // down
+            {0, -1}, // left
+            {0, 1}   // right
+        };
+
+        Position direction = directions[std::rand() % 4];
+
+        Position current = sharkStart;
+
+        for (int i = 0; i < 3; ++i)
+        {
+            Position next{
+                current.row + direction.row,
+                current.col + direction.col
+            };
+
+            if (!grid.isInBounds(next) ||
+                grid.getTile(next) == Tile::Wall ||
+                grid.getTile(next) == Tile::Goal)
+            {
+                break;
+            }
+
+            route.push_back(next);
+            current = next;
+        }
+
+        if (route.size() == 1)
+        {
+            route.push_back(sharkStart);
+        }
+
+        return route;
     }
 }

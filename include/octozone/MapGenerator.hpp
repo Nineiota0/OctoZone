@@ -24,5 +24,8 @@ namespace octozone
         static Position randomPosition(int rows, int cols);
         static Position randomEdgePosition(int rows, int cols);
         static int manhattanDistance(const Position& a, const Position& b);
+        static Path createSharkPatrolRoute(
+            const Grid& grid,
+            const Position& sharkStart);
     };
 }
