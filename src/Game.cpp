@@ -2,6 +2,7 @@
 
 #include "octozone/Game.hpp"
 #include "octozone/Pathfinder.hpp"
+#include "octozone/VisionSystem.hpp"
 
 namespace octozone
 {
@@ -24,12 +25,24 @@ namespace octozone
 
     void Game::run()
     {
-        render();  // Show the initial state.
+        render();
 
-        while (octopus_.hasPath())
+        while (!gameOver_ && octopus_.hasPath())
         {
             update();
             render();
+
+            checkLoseCondition();
+            checkWinCondition();
+        }
+
+        if (playerWon_)
+        {
+            std::cout << "Octopus escaped! You win!\n";
+        }
+        else
+        {
+            std::cout << "Octopus detected! Game over.\n";
         }
     }
 
@@ -83,5 +96,27 @@ namespace octozone
         grid_.setTile({4, 5}, Tile::Wall);
 
         grid_.setTile(shark_.getPosition(), Tile::Shark);
+    }
+
+    void Game::checkWinCondition()
+    {
+        if (octopus_.getPosition() == octopus_.getGoal())
+        {
+            gameOver_ = true;
+            playerWon_ = true;
+        }
+    }
+
+    void Game::checkLoseCondition()
+    {
+        if (VisionSystem::canDetect(
+                grid_,
+                shark_.getPosition(),
+                octopus_.getPosition(),
+                3))
+        {
+            gameOver_ = true;
+            playerWon_ = false;
+        }
     }
 }

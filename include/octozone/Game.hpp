@@ -22,9 +22,15 @@ namespace octozone
         Octopus octopus_;
         Shark shark_;
 
+        bool gameOver_{false};
+        bool playerWon_{false};
+
         void initializeMap();
         void update();
         void render();
+
+        void checkWinCondition();
+        void checkLoseCondition();
     };
 
 }
