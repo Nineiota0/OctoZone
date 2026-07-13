@@ -4,6 +4,7 @@
 #include <thread>
 
 #include "octozone/Game.hpp"
+#include "octozone/MapGenerator.hpp"
 #include "octozone/Pathfinder.hpp"
 #include "octozone/VisionSystem.hpp"
 
@@ -15,7 +16,11 @@ namespace octozone
           octopus_({9, 0}, {0, 9}),
           shark_({2, 6}, Path{{2, 6}, {2, 7}, {2, 8}, {2, 7}})
     {
-        initializeMap();
+        GeneratedMap generatedMap = MapGenerator::generate(10, 10);
+
+        grid_ = generatedMap.grid;
+        octopus_ = Octopus(generatedMap.octopusStart, generatedMap.goal);
+        shark_ = Shark(generatedMap.sharkStart, generatedMap.sharkPatrolRoute);
 
         Path path = Pathfinder::findPath(
             grid_,
@@ -68,11 +73,7 @@ namespace octozone
 
     void Game::initializeMap()
     {
-        grid_.setTile(octopus_.getGoal(), Tile::Goal);
-
-        grid_.setTile({4, 3}, Tile::Wall);
-        grid_.setTile({4, 4}, Tile::Wall);
-        grid_.setTile({4, 5}, Tile::Wall);
+        // Map generation now handles terrain setup.
     }
 
     void Game::checkWinCondition()

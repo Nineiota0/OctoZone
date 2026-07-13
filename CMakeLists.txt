@@ -14,6 +14,7 @@ add_executable(OctoZone
     src/Octopus.cpp
     src/Shark.cpp
     src/VisionSystem.cpp
+    src/MapGenerator.cpp
 )
 
 target_include_directories(OctoZone PRIVATE
