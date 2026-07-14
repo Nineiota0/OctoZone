@@ -11,6 +11,7 @@ namespace octozone
         static bool canDetect(
             const Grid& grid,
             const Position& sharkPosition,
+            const Position& sharkDirection,
             const Position& octopusPosition,
             int range);
     };

@@ -14,6 +14,11 @@ namespace octozone
         return position_;
     }
 
+    Position Shark::getDirection() const
+    {
+        return direction_;
+    }
+
     void Shark::moveOneStep()
     {
         if (patrolRoute_.empty())
@@ -26,6 +31,8 @@ namespace octozone
             position_ = patrolRoute_.front();
             return;
         }
+
+        Position oldPosition = position_;
 
         patrolIndex_ += patrolDirection_;
 
@@ -41,6 +48,11 @@ namespace octozone
         }
 
         position_ = patrolRoute_[patrolIndex_];
+
+        direction_ = {
+            position_.row - oldPosition.row,
+            position_.col - oldPosition.col
+        };
     }
 
 }

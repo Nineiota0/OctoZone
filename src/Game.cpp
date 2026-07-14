@@ -90,6 +90,7 @@ namespace octozone
         if (VisionSystem::canDetect(
                 grid_,
                 shark_.getPosition(),
+                shark_.getDirection(),
                 octopus_.getPosition(),
                 3))
         {

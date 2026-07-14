@@ -149,7 +149,7 @@ namespace octozone
 
         if (route.size() == 1)
         {
-            route.push_back(sharkStart);
+            return createSharkPatrolRoute(grid, sharkStart);
         }
 
         return route;
