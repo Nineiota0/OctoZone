@@ -1,6 +1,7 @@
 #pragma once
 
 #include "octozone/Grid.hpp"
+#include "octozone/Path.hpp"
 #include "octozone/Position.hpp"
 
 namespace octozone
@@ -13,6 +14,12 @@ namespace octozone
             const Position& sharkPosition,
             const Position& sharkDirection,
             const Position& octopusPosition,
+            int range);
+
+        static Path getVisiblePositions(
+            const Grid& grid,
+            const Position& sharkPosition,
+            const Position& sharkDirection,
             int range);
     };
 }
