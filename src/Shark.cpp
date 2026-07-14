@@ -19,6 +19,21 @@ namespace octozone
         return direction_;
     }
 
+    SharkState Shark::getState() const
+    {
+        return state_;
+    }
+
+    void Shark::setState(SharkState state)
+    {
+        state_ = state;
+    }
+
+    bool Shark::isChasing() const
+    {
+        return state_ == SharkState::Chase;
+    }
+
     void Shark::moveOneStep()
     {
         if (patrolRoute_.empty())
@@ -53,6 +68,16 @@ namespace octozone
             position_.row - oldPosition.row,
             position_.col - oldPosition.col
         };
+    }
+
+    void Shark::moveTo(Position position)
+    {
+        direction_ = {
+            position.row - position_.row,
+            position.col - position_.col
+        };
+
+        position_ = position;
     }
 
 }

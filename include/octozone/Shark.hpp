@@ -2,28 +2,36 @@
 
 #include "octozone/Path.hpp"
 #include "octozone/Position.hpp"
+#include "octozone/SharkState.hpp"
 
-namespace octozone 
+namespace octozone
 {
 
-    class Shark 
+    class Shark
     {
-        public:
-           Shark(Position start, const Path& patrolRoute);
-        
-            Position getPosition() const;
-            void moveOneStep();
+    public:
+        Shark(Position start, const Path& patrolRoute);
 
-            Position getDirection() const;
-        
-        private:
-            Position position_;
-            Path patrolRoute_;
+        Position getPosition() const;
+        Position getDirection() const;
 
-            int patrolIndex_{0};
-            int patrolDirection_{1};
+        SharkState getState() const;
+        void setState(SharkState state);
+        bool isChasing() const;
 
-            Position direction_{0, 0};
+        void moveOneStep();
+        void moveTo(Position position);
+
+    private:
+        Position position_;
+        Path patrolRoute_;
+
+        int patrolIndex_{0};
+        int patrolDirection_{1};
+
+        Position direction_{0, 0};
+
+        SharkState state_{SharkState::Patrol};
     };
 
 }

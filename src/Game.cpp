@@ -55,14 +55,31 @@ namespace octozone
         }
         else
         {
-            std::cout << "Octopus detected! Game over.\n";
+            std::cout << "Octopus caught! Game over.\n";
         }
     }
 
     void Game::update()
     {
         octopus_.moveOneStep();
-        shark_.moveOneStep();
+
+        if (shark_.isChasing())
+        {
+            Path chasePath = Pathfinder::findPath(
+                grid_,
+                shark_.getPosition(),
+                octopus_.getPosition()
+            );
+
+            if (!chasePath.empty())
+            {
+                shark_.moveTo(chasePath.front());
+            }
+        }
+        else
+        {
+            shark_.moveOneStep();
+        }
     }
 
     void Game::render()
@@ -93,6 +110,11 @@ namespace octozone
                 shark_.getDirection(),
                 octopus_.getPosition(),
                 3))
+        {
+            shark_.setState(SharkState::Chase);
+        }
+
+        if (shark_.getPosition() == octopus_.getPosition())
         {
             gameOver_ = true;
             playerWon_ = false;
