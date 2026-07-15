@@ -56,12 +56,17 @@ namespace octozone
         const Position& octopusPosition,
         int range)
     {
+        if (grid.getTile(octopusPosition) == Tile::Seaweed)
+        {
+            return false;
+        }
+    
         Path visiblePositions = getVisiblePositions(
             grid,
             sharkPosition,
             sharkDirection,
             range);
-
+        
         return std::find(
             visiblePositions.begin(),
             visiblePositions.end(),
