@@ -44,6 +44,20 @@ namespace octozone
                 }
             }
 
+            int seaweedCount = 8;
+
+            for (int i = 0; i < seaweedCount; ++i)
+            {
+                Position seaweedPosition = randomPosition(rows, cols);
+            
+                if (seaweedPosition != octopusStart &&
+                    seaweedPosition != goal &&
+                    grid.getTile(seaweedPosition) == Tile::Empty)
+                {
+                    grid.setTile(seaweedPosition, Tile::Seaweed);
+                }
+            }
+
             Position sharkStart = randomPosition(rows, cols);
                     
             while (sharkStart == octopusStart ||

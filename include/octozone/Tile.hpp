@@ -8,6 +8,7 @@ namespace octozone
         Wall,
         Start,
         Goal,
+        Seaweed,
         Octopus,
         Shark
     };

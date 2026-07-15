@@ -36,7 +36,8 @@ namespace octozone
                     break;
                 }
 
-                if (grid.getTile(visiblePosition) == Tile::Wall)
+                if (grid.getTile(visiblePosition) == Tile::Wall ||
+                    grid.getTile(visiblePosition) == Tile::Seaweed)
                 {
                     break;
                 }

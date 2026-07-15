@@ -70,6 +70,7 @@ namespace octozone
             case Tile::Goal:  return 'G';
             case Tile::Octopus: return 'O';
             case Tile::Shark: return 'X';
+            case Tile::Seaweed: return '~';
         }
 
         return '?';
