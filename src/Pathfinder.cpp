@@ -54,6 +54,15 @@ namespace octozone
             return position.row * cols + position.col;
         }
 
+        bool containsPosition(const Path& positions, const Position& position)
+        {
+            return std::find(
+                positions.begin(),
+                positions.end(),
+                position
+            ) != positions.end();
+        }
+
         Path reconstructPath(
             Position goal,
             const std::unordered_map<int, Position>& parents,
@@ -72,7 +81,6 @@ namespace octozone
 
             std::reverse(path.begin(), path.end());
 
-            // Remove the starting position since the octopus is already there.
             if (!path.empty())
             {
                 path.erase(path.begin());
@@ -82,7 +90,19 @@ namespace octozone
         }
     }
 
-    Path Pathfinder::findPath(const Grid& grid, Position start, Position goal)
+    Path Pathfinder::findPath(
+        const Grid& grid,
+        Position start,
+        Position goal)
+    {
+        return findPath(grid, start, goal, {});
+    }
+
+    Path Pathfinder::findPath(
+        const Grid& grid,
+        Position start,
+        Position goal,
+        const Path& blockedPositions)
     {
         std::priority_queue<Node, std::vector<Node>, NodeCompare> openSet;
         std::unordered_set<int> closedSet;
@@ -119,6 +139,13 @@ namespace octozone
                 }
 
                 if (grid.getTile(neighbor) == Tile::Wall)
+                {
+                    continue;
+                }
+
+                if (containsPosition(blockedPositions, neighbor) &&
+                    grid.getTile(neighbor) != Tile::Seaweed &&
+                    neighbor != goal)
                 {
                     continue;
                 }

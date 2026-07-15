@@ -21,19 +21,11 @@ namespace octozone
         grid_ = generatedMap.grid;
         octopus_ = Octopus(generatedMap.octopusStart, generatedMap.goal);
         shark_ = Shark(generatedMap.sharkStart, generatedMap.sharkPatrolRoute);
-
-        Path path = Pathfinder::findPath(
-            grid_,
-            octopus_.getPosition(),
-            octopus_.getGoal()
-        );
-
-        octopus_.setPath(path);
     }
 
     void Game::run()
     {
-        while (!gameOver_ && octopus_.hasPath())
+        while (!gameOver_)
         {
             std::system("cls");
 
@@ -61,7 +53,27 @@ namespace octozone
 
     void Game::update()
     {
-        octopus_.moveOneStep();
+        Path danger = VisionSystem::getVisiblePositions(
+            grid_,
+            shark_.getPosition(),
+            shark_.getDirection(),
+            3
+        );
+
+        danger.push_back(shark_.getPosition());
+
+        Path safePath = Pathfinder::findPath(
+            grid_,
+            octopus_.getPosition(),
+            octopus_.getGoal(),
+            danger
+        );
+
+        if (!safePath.empty())
+        {
+            octopus_.setPath(safePath);
+            octopus_.moveOneStep();
+        }
 
         if (shark_.isChasing())
         {
