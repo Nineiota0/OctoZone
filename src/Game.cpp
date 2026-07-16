@@ -7,6 +7,7 @@
 #include "octozone/MapGenerator.hpp"
 #include "octozone/Pathfinder.hpp"
 #include "octozone/VisionSystem.hpp"
+#include "octozone/OctopusDecision.hpp"
 
 namespace octozone
 {
@@ -65,21 +66,68 @@ namespace octozone
             shark_.getDirection(),
             3
         );
-
+    
         danger.push_back(shark_.getPosition());
-
-        Path safePath = Pathfinder::findPath(
+    
+        if (octopus_.getDecision() == OctopusDecision::Hide &&
+            octopus_.getHideTarget().has_value())
+        {
+            Position hideTarget = octopus_.getHideTarget().value();
+        
+            if (octopus_.getPosition() == hideTarget)
+            {
+                octopus_.setDecision(OctopusDecision::Wait);
+                return;
+            }
+        
+            Path pathToHideTarget = Pathfinder::findPath(
+                grid_,
+                octopus_.getPosition(),
+                hideTarget,
+                danger
+            );
+        
+            if (!pathToHideTarget.empty())
+            {
+                octopus_.setPath(pathToHideTarget);
+                octopus_.moveOneStep();
+                return;
+            }
+        
+            octopus_.setDecision(OctopusDecision::Wait);
+            return;
+        }
+    
+        Path safePathToGoal = Pathfinder::findPath(
             grid_,
             octopus_.getPosition(),
             octopus_.getGoal(),
             danger
         );
-
-        if (!safePath.empty())
+    
+        if (!safePathToGoal.empty())
         {
-            octopus_.setPath(safePath);
+            octopus_.clearHideTarget();
+            octopus_.setDecision(OctopusDecision::MoveToGoal);
+            octopus_.setPath(safePathToGoal);
             octopus_.moveOneStep();
+            return;
         }
+    
+        Path safePathToSeaweed = findPathToNearestSeaweed(danger);
+    
+        if (!safePathToSeaweed.empty())
+        {
+            Position hideTarget = safePathToSeaweed.back();
+        
+            octopus_.setHideTarget(hideTarget);
+            octopus_.setDecision(OctopusDecision::Hide);
+            octopus_.setPath(safePathToSeaweed);
+            octopus_.moveOneStep();
+            return;
+        }
+    
+        octopus_.setDecision(OctopusDecision::Wait);
     }
 
     void Game::updateShark()
@@ -140,5 +188,38 @@ namespace octozone
             gameOver_ = true;
             playerWon_ = false;
         }
+    }
+
+    Path Game::findPathToNearestSeaweed(const Path& danger) const
+    {
+        Path bestPath;
+
+        for (int row = 0; row < grid_.getRows(); ++row)
+        {
+            for (int col = 0; col < grid_.getCols(); ++col)
+            {
+                Position position{row, col};
+
+                if (grid_.getTile(position) != Tile::Seaweed)
+                {
+                    continue;
+                }
+
+                Path path = Pathfinder::findPath(
+                    grid_,
+                    octopus_.getPosition(),
+                    position,
+                    danger
+                );
+
+                if (!path.empty() &&
+                    (bestPath.empty() || path.size() < bestPath.size()))
+                {
+                    bestPath = path;
+                }
+            }
+        }
+
+        return bestPath;
     }
 }

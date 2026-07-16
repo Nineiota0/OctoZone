@@ -1,27 +1,40 @@
 #pragma once
 
+#include "octozone/OctopusDecision.hpp"
 #include "octozone/Path.hpp"
 #include "octozone/Position.hpp"
 
-namespace octozone 
+#include <optional>
+
+namespace octozone
 {
 
-    class Octopus 
+    class Octopus
     {
-        public:
-            Octopus(Position start, Position goal);
-        
-            Position getPosition() const;
-            Position getGoal() const;
-        
-            void setPath(Path path);
-            bool hasPath() const;
-            void moveOneStep();
-        
-        private:
-            Position position_;
-            Position goal_;
-            Path path_;
+    public:
+        Octopus(Position start, Position goal);
+
+        Position getPosition() const;
+        Position getGoal() const;
+
+        void setPath(Path path);
+        bool hasPath() const;
+        void moveOneStep();
+
+        OctopusDecision getDecision() const;
+        void setDecision(OctopusDecision decision);
+
+        std::optional<Position> getHideTarget() const;
+        void setHideTarget(Position position);
+        void clearHideTarget();
+
+    private:
+        Position position_;
+        Position goal_;
+        Path path_;
+
+        OctopusDecision decision_{OctopusDecision::MoveToGoal};
+        std::optional<Position> hideTarget_;
     };
 
 }

@@ -144,8 +144,7 @@ namespace octozone
                 }
 
                 if (containsPosition(blockedPositions, neighbor) &&
-                    grid.getTile(neighbor) != Tile::Seaweed &&
-                    neighbor != goal)
+                    grid.getTile(neighbor) != Tile::Seaweed)
                 {
                     continue;
                 }

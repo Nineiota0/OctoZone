@@ -22,6 +22,8 @@ namespace octozone
         Octopus octopus_;
         Shark shark_;
 
+        Path findPathToNearestSeaweed(const Path& danger) const;
+
         bool gameOver_{false};
         bool playerWon_{false};
 
