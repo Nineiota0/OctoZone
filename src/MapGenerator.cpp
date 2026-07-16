@@ -22,34 +22,35 @@ namespace octozone
 
             Position goal = randomEdgePosition(rows, cols);
             Position octopusStart = randomEdgePosition(rows, cols);
-                    
-            int minimumStartDistance = 6;
-                    
+
+            int minimumStartDistance = 12;
+
             while (octopusStart == goal ||
                    manhattanDistance(octopusStart, goal) < minimumStartDistance)
             {
                 octopusStart = randomEdgePosition(rows, cols);
             }
 
-            int wallCount = 15;
+            int wallCount = 75;
 
             for (int i = 0; i < wallCount; ++i)
             {
                 Position wallPosition = randomPosition(rows, cols);
 
                 if (wallPosition != octopusStart &&
-                    wallPosition != goal)
+                    wallPosition != goal &&
+                    grid.getTile(wallPosition) == Tile::Empty)
                 {
                     grid.setTile(wallPosition, Tile::Wall);
                 }
             }
 
-            int seaweedCount = 8;
+            int seaweedCount = 15;
 
             for (int i = 0; i < seaweedCount; ++i)
             {
                 Position seaweedPosition = randomPosition(rows, cols);
-            
+
                 if (seaweedPosition != octopusStart &&
                     seaweedPosition != goal &&
                     grid.getTile(seaweedPosition) == Tile::Empty)
@@ -60,16 +61,29 @@ namespace octozone
 
             grid.setTile(goal, Tile::Goal);
 
-            Position sharkStart = randomPosition(rows, cols);
-                    
-            while (sharkStart == octopusStart ||
-                   sharkStart == goal ||
-                   grid.getTile(sharkStart) == Tile::Wall)
+            std::vector<GeneratedShark> sharks;
+            int sharkCount = 5;
+
+            for (int i = 0; i < sharkCount; ++i)
             {
-                sharkStart = randomPosition(rows, cols);
+                Position sharkStart = randomPosition(rows, cols);
+
+                while (sharkStart == octopusStart ||
+                       sharkStart == goal ||
+                       grid.getTile(sharkStart) == Tile::Wall ||
+                       grid.getTile(sharkStart) == Tile::Seaweed ||
+                       containsPosition(sharks, sharkStart))
+                {
+                    sharkStart = randomPosition(rows, cols);
+                }
+
+                Path sharkPatrolRoute = createSharkPatrolRoute(grid, sharkStart);
+
+                sharks.push_back({
+                    sharkStart,
+                    sharkPatrolRoute
+                });
             }
-            
-            Path sharkPatrolRoute = createSharkPatrolRoute(grid, sharkStart);
 
             Path path = Pathfinder::findPath(
                 grid,
@@ -83,8 +97,7 @@ namespace octozone
                     grid,
                     octopusStart,
                     goal,
-                    sharkStart,
-                    sharkPatrolRoute
+                    sharks
                 };
             }
         }
@@ -129,43 +142,61 @@ namespace octozone
         const Grid& grid,
         const Position& sharkStart)
     {
-        Path route;
-        route.push_back(sharkStart);
-
         const Position directions[] = {
-            {-1, 0}, // up
-            {1, 0},  // down
-            {0, -1}, // left
-            {0, 1}   // right
+            {-1, 0},
+            {1, 0},
+            {0, -1},
+            {0, 1}
         };
 
-        Position direction = directions[std::rand() % 4];
-
-        Position current = sharkStart;
-
-        for (int i = 0; i < 3; ++i)
+        for (int attempt = 0; attempt < 12; ++attempt)
         {
-            Position next{
-                current.row + direction.row,
-                current.col + direction.col
-            };
+            Path route;
+            route.push_back(sharkStart);
 
-            if (!grid.isInBounds(next) ||
-                grid.getTile(next) == Tile::Wall ||
-                grid.getTile(next) == Tile::Goal)
+            Position direction = directions[std::rand() % 4];
+            Position current = sharkStart;
+
+            for (int i = 0; i < 4; ++i)
             {
-                break;
+                Position next{
+                    current.row + direction.row,
+                    current.col + direction.col
+                };
+
+                if (!grid.isInBounds(next) ||
+                    grid.getTile(next) == Tile::Wall ||
+                    grid.getTile(next) == Tile::Goal ||
+                    grid.getTile(next) == Tile::Seaweed)
+                {
+                    break;
+                }
+
+                route.push_back(next);
+                current = next;
             }
 
-            route.push_back(next);
-            current = next;
+            if (route.size() > 1)
+            {
+                return route;
+            }
         }
 
-        if (route.size() == 1)
+        return Path{sharkStart};
+    }
+
+    bool MapGenerator::containsPosition(
+        const std::vector<GeneratedShark>& sharks,
+        const Position& position)
+    {
+        for (const GeneratedShark& shark : sharks)
         {
-            return createSharkPatrolRoute(grid, sharkStart);
+            if (shark.start == position)
+            {
+                return true;
+            }
         }
 
-        return route;
+        return false;
     }
 }

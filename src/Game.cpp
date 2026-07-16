@@ -9,16 +9,22 @@
 namespace octozone
 {
     Game::Game()
-        : grid_(10, 10),
+        : grid_(25, 25),
           renderer_(),
-          octopus_({9, 0}, {0, 9}),
-          shark_({2, 6}, Path{{2, 6}, {2, 7}, {2, 8}, {2, 7}})
+          octopus_({24, 0}, {0, 24})
     {
-        GeneratedMap generatedMap = MapGenerator::generate(10, 10);
+        GeneratedMap generatedMap = MapGenerator::generate(25, 25);
 
         grid_ = generatedMap.grid;
         octopus_ = Octopus(generatedMap.octopusStart, generatedMap.goal);
-        shark_ = Shark(generatedMap.sharkStart, generatedMap.sharkPatrolRoute);
+
+        for (const GeneratedShark& generatedShark : generatedMap.sharks)
+        {
+            sharks_.emplace_back(
+                generatedShark.start,
+                generatedShark.patrolRoute
+            );
+        }
     }
 
     void Game::run()
@@ -52,25 +58,31 @@ namespace octozone
     void Game::update()
     {
         updateOctopus();
-        updateShark();
+        updateSharks();
     }
 
     void Game::updateOctopus()
     {
-        octopusBrain_.update(octopus_, shark_, grid_);
+        if (!sharks_.empty())
+        {
+            octopusBrain_.update(octopus_, sharks_.front(), grid_);
+        }
     }
 
-    void Game::updateShark()
+    void Game::updateSharks()
     {
-        shark_.update(
-            grid_,
-            octopus_.getPosition(),
-            octopus_.isHidden(grid_));
+        for (Shark& shark : sharks_)
+        {
+            shark.update(
+                grid_,
+                octopus_.getPosition(),
+                octopus_.isHidden(grid_));
+        }
     }
 
     void Game::render()
     {
-        renderer_.draw(grid_, octopus_, shark_);
+        renderer_.draw(grid_, octopus_, sharks_);
         std::cout << '\n';
     }
 
@@ -90,15 +102,19 @@ namespace octozone
 
     void Game::checkLoseCondition()
     {
-        if (shark_.canDetect(grid_, octopus_.getPosition()))
+        for (Shark& shark : sharks_)
         {
-            shark_.setState(SharkState::Chase);
-        }
+            if (shark.canDetect(grid_, octopus_.getPosition()))
+            {
+                shark.setState(SharkState::Chase);
+            }
 
-        if (shark_.getPosition() == octopus_.getPosition())
-        {
-            gameOver_ = true;
-            playerWon_ = false;
+            if (shark.getPosition() == octopus_.getPosition())
+            {
+                gameOver_ = true;
+                playerWon_ = false;
+                return;
+            }
         }
     }
 }

@@ -4,6 +4,8 @@
 #include "octozone/Octopus.hpp"
 #include "octozone/Shark.hpp"
 
+#include <vector>
+
 namespace octozone
 {
 
@@ -13,10 +15,11 @@ namespace octozone
         void draw(
             const Grid& grid,
             const Octopus& octopus,
-            const Shark& shark) const;
+            const std::vector<Shark>& sharks) const;
 
     private:
         char tileToChar(Tile tile) const;
+        void printTile(Tile tile) const;
     };
 
 }

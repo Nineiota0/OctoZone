@@ -6,6 +6,8 @@
 #include "octozone/OctopusBrain.hpp"
 #include "octozone/Shark.hpp"
 
+#include <vector>
+
 namespace octozone
 {
     class Game
@@ -19,7 +21,7 @@ namespace octozone
         Grid grid_;
         ConsoleRenderer renderer_;
         Octopus octopus_;
-        Shark shark_;
+        std::vector<Shark> sharks_;
         OctopusBrain octopusBrain_;
 
         bool gameOver_{false};
@@ -30,7 +32,7 @@ namespace octozone
         void render();
 
         void updateOctopus();
-        void updateShark();
+        void updateSharks();
 
         void checkWinCondition();
         void checkLoseCondition();
