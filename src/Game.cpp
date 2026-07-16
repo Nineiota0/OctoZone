@@ -57,7 +57,7 @@ namespace octozone
 
     void Game::updateOctopus()
     {
-        octopus_.update(grid_, shark_);
+        octopusBrain_.update(octopus_, shark_, grid_);
     }
 
     void Game::updateShark()

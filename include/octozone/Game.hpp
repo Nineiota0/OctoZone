@@ -3,11 +3,11 @@
 #include "octozone/ConsoleRenderer.hpp"
 #include "octozone/Grid.hpp"
 #include "octozone/Octopus.hpp"
+#include "octozone/OctopusBrain.hpp"
 #include "octozone/Shark.hpp"
 
 namespace octozone
 {
-
     class Game
     {
     public:
@@ -20,6 +20,7 @@ namespace octozone
         ConsoleRenderer renderer_;
         Octopus octopus_;
         Shark shark_;
+        OctopusBrain octopusBrain_;
 
         bool gameOver_{false};
         bool playerWon_{false};
@@ -34,5 +35,4 @@ namespace octozone
         void checkWinCondition();
         void checkLoseCondition();
     };
-
 }

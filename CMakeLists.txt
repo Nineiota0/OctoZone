@@ -15,6 +15,10 @@ add_executable(OctoZone
     src/Shark.cpp
     src/VisionSystem.cpp
     src/MapGenerator.cpp
+    src/OctopusBrain.cpp
+    src/DangerSystem.cpp
+    src/GoalPlanner.cpp
+    src/HidePlanner.cpp
 )
 
 target_include_directories(OctoZone PRIVATE
