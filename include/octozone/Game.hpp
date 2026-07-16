@@ -29,6 +29,9 @@ namespace octozone
         void update();
         void render();
 
+        void updateOctopus();
+        void updateShark();
+
         void checkWinCondition();
         void checkLoseCondition();
     };

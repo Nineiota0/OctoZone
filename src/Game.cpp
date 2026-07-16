@@ -53,6 +53,12 @@ namespace octozone
 
     void Game::update()
     {
+        updateOctopus();
+        updateShark();
+    }
+
+    void Game::updateOctopus()
+    {
         Path danger = VisionSystem::getVisiblePositions(
             grid_,
             shark_.getPosition(),
@@ -74,7 +80,10 @@ namespace octozone
             octopus_.setPath(safePath);
             octopus_.moveOneStep();
         }
+    }
 
+    void Game::updateShark()
+    {
         if (shark_.isChasing())
         {
             Path chasePath = Pathfinder::findPath(
