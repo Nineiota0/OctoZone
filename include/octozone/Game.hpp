@@ -4,7 +4,6 @@
 #include "octozone/Grid.hpp"
 #include "octozone/Octopus.hpp"
 #include "octozone/Shark.hpp"
-#include "octozone/VisionSystem.hpp"
 
 namespace octozone
 {
@@ -21,8 +20,6 @@ namespace octozone
         ConsoleRenderer renderer_;
         Octopus octopus_;
         Shark shark_;
-
-        Path findPathToNearestSeaweed(const Path& danger) const;
 
         bool gameOver_{false};
         bool playerWon_{false};

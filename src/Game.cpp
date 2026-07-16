@@ -5,9 +5,6 @@
 
 #include "octozone/Game.hpp"
 #include "octozone/MapGenerator.hpp"
-#include "octozone/Pathfinder.hpp"
-#include "octozone/VisionSystem.hpp"
-#include "octozone/OctopusDecision.hpp"
 
 namespace octozone
 {
@@ -60,95 +57,15 @@ namespace octozone
 
     void Game::updateOctopus()
     {
-        Path danger = VisionSystem::getVisiblePositions(
-            grid_,
-            shark_.getPosition(),
-            shark_.getDirection(),
-            3
-        );
-    
-        danger.push_back(shark_.getPosition());
-    
-        if (octopus_.getDecision() == OctopusDecision::Hide &&
-            octopus_.getHideTarget().has_value())
-        {
-            Position hideTarget = octopus_.getHideTarget().value();
-        
-            if (octopus_.getPosition() == hideTarget)
-            {
-                octopus_.setDecision(OctopusDecision::Wait);
-                return;
-            }
-        
-            Path pathToHideTarget = Pathfinder::findPath(
-                grid_,
-                octopus_.getPosition(),
-                hideTarget,
-                danger
-            );
-        
-            if (!pathToHideTarget.empty())
-            {
-                octopus_.setPath(pathToHideTarget);
-                octopus_.moveOneStep();
-                return;
-            }
-        
-            octopus_.setDecision(OctopusDecision::Wait);
-            return;
-        }
-    
-        Path safePathToGoal = Pathfinder::findPath(
-            grid_,
-            octopus_.getPosition(),
-            octopus_.getGoal(),
-            danger
-        );
-    
-        if (!safePathToGoal.empty())
-        {
-            octopus_.clearHideTarget();
-            octopus_.setDecision(OctopusDecision::MoveToGoal);
-            octopus_.setPath(safePathToGoal);
-            octopus_.moveOneStep();
-            return;
-        }
-    
-        Path safePathToSeaweed = findPathToNearestSeaweed(danger);
-    
-        if (!safePathToSeaweed.empty())
-        {
-            Position hideTarget = safePathToSeaweed.back();
-        
-            octopus_.setHideTarget(hideTarget);
-            octopus_.setDecision(OctopusDecision::Hide);
-            octopus_.setPath(safePathToSeaweed);
-            octopus_.moveOneStep();
-            return;
-        }
-    
-        octopus_.setDecision(OctopusDecision::Wait);
+        octopus_.update(grid_, shark_);
     }
 
     void Game::updateShark()
     {
-        if (shark_.isChasing())
-        {
-            Path chasePath = Pathfinder::findPath(
-                grid_,
-                shark_.getPosition(),
-                octopus_.getPosition()
-            );
-
-            if (!chasePath.empty())
-            {
-                shark_.moveTo(chasePath.front());
-            }
-        }
-        else
-        {
-            shark_.moveOneStep();
-        }
+        shark_.update(
+            grid_,
+            octopus_.getPosition(),
+            octopus_.isHidden(grid_));
     }
 
     void Game::render()
@@ -173,12 +90,7 @@ namespace octozone
 
     void Game::checkLoseCondition()
     {
-        if (VisionSystem::canDetect(
-                grid_,
-                shark_.getPosition(),
-                shark_.getDirection(),
-                octopus_.getPosition(),
-                3))
+        if (shark_.canDetect(grid_, octopus_.getPosition()))
         {
             shark_.setState(SharkState::Chase);
         }
@@ -188,38 +100,5 @@ namespace octozone
             gameOver_ = true;
             playerWon_ = false;
         }
-    }
-
-    Path Game::findPathToNearestSeaweed(const Path& danger) const
-    {
-        Path bestPath;
-
-        for (int row = 0; row < grid_.getRows(); ++row)
-        {
-            for (int col = 0; col < grid_.getCols(); ++col)
-            {
-                Position position{row, col};
-
-                if (grid_.getTile(position) != Tile::Seaweed)
-                {
-                    continue;
-                }
-
-                Path path = Pathfinder::findPath(
-                    grid_,
-                    octopus_.getPosition(),
-                    position,
-                    danger
-                );
-
-                if (!path.empty() &&
-                    (bestPath.empty() || path.size() < bestPath.size()))
-                {
-                    bestPath = path;
-                }
-            }
-        }
-
-        return bestPath;
     }
 }

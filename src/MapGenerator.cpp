@@ -58,6 +58,8 @@ namespace octozone
                 }
             }
 
+            grid.setTile(goal, Tile::Goal);
+
             Position sharkStart = randomPosition(rows, cols);
                     
             while (sharkStart == octopusStart ||
@@ -68,8 +70,6 @@ namespace octozone
             }
             
             Path sharkPatrolRoute = createSharkPatrolRoute(grid, sharkStart);
-
-            grid.setTile(goal, Tile::Goal);
 
             Path path = Pathfinder::findPath(
                 grid,
