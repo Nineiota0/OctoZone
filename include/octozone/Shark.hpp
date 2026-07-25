@@ -30,6 +30,7 @@ namespace octozone
 
         SharkState getState() const;
         void setState(SharkState state);
+        void beginChase(Position octopusPosition);
         bool isChasing() const;
         bool isOnPatrolRoute() const;
         bool canDetect(const Grid& grid, Position octopusPosition, int range = 3) const;

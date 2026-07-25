@@ -44,6 +44,13 @@ namespace octozone
         : position_(start),
           patrolRoute_(patrolRoute)
     {
+        if (patrolRoute_.size() > 1)
+        {
+            direction_ = {
+                patrolRoute_[1].row - patrolRoute_[0].row,
+                patrolRoute_[1].col - patrolRoute_[0].col
+            };
+        }
     }
 
     Position Shark::getPosition() const
@@ -92,6 +99,17 @@ namespace octozone
     void Shark::setState(SharkState state)
     {
         state_ = state;
+
+        if (state_ == SharkState::Patrol)
+        {
+            lastKnownOctopusPosition_.reset();
+        }
+    }
+
+    void Shark::beginChase(Position octopusPosition)
+    {
+        state_ = SharkState::Chase;
+        lastKnownOctopusPosition_ = octopusPosition;
     }
 
     bool Shark::isChasing() const
@@ -132,32 +150,28 @@ namespace octozone
 
         if (canSeeOctopus)
         {
-            setState(SharkState::Chase);
-            lastKnownOctopusPosition_ = octopusPosition;
+            beginChase(octopusPosition);
         }
 
-        if (isChasing() && lastKnownOctopusPosition_.has_value())
+        if (isChasing() && octopusHidden)
         {
-            Position target = canSeeOctopus
-                ? octopusPosition
-                : lastKnownOctopusPosition_.value();
+            setState(SharkState::Patrol);
+        }
+
+        if (isChasing())
+        {
+            lastKnownOctopusPosition_ = octopusPosition;
 
             Path chasePath = Pathfinder::findPath(
                 grid,
                 position_,
-                target,
+                octopusPosition,
                 occupiedPositions);
 
             if (!chasePath.empty())
             {
                 moveTo(chasePath.front());
                 return;
-            }
-
-            if (!canSeeOctopus)
-            {
-                lastKnownOctopusPosition_.reset();
-                setState(SharkState::Patrol);
             }
 
             return;

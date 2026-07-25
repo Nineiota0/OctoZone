@@ -74,6 +74,7 @@ namespace octozone
 
     void Game::update()
     {
+        refreshSharkChases();
         updateOctopus();
         updateSharks();
     }
@@ -129,16 +130,28 @@ namespace octozone
         }
     }
 
-    void Game::checkLoseCondition()
+    void Game::refreshSharkChases()
     {
+        if (octopus_.isHidden(grid_))
+        {
+            return;
+        }
+
         for (Shark& shark : sharks_)
         {
-            if (!octopus_.isHidden(grid_) &&
-                shark.canDetect(grid_, octopus_.getPosition()))
+            if (shark.canDetect(grid_, octopus_.getPosition()))
             {
-                shark.setState(SharkState::Chase);
+                shark.beginChase(octopus_.getPosition());
             }
+        }
+    }
 
+    void Game::checkLoseCondition()
+    {
+        refreshSharkChases();
+
+        for (Shark& shark : sharks_)
+        {
             if (shark.getPosition() == octopus_.getPosition())
             {
                 gameOver_ = true;

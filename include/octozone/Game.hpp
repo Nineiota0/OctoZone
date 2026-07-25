@@ -34,6 +34,7 @@ namespace octozone
         void updateOctopus();
         void updateSharks();
 
+        void refreshSharkChases();
         void checkWinCondition();
         void checkLoseCondition();
     };

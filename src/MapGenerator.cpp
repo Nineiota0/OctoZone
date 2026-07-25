@@ -149,31 +149,60 @@ namespace octozone
             {0, 1}
         };
 
-        for (int attempt = 0; attempt < 12; ++attempt)
+        for (int attempt = 0; attempt < 30; ++attempt)
         {
             Path route;
             route.push_back(sharkStart);
 
-            Position direction = directions[std::rand() % 4];
-            Position current = sharkStart;
+            int pattern = std::rand() % 4;
 
-            for (int i = 0; i < 4; ++i)
+            if (pattern == 0)
             {
-                Position next{
-                    current.row + direction.row,
-                    current.col + direction.col
-                };
+                appendPatrolLeg(
+                    grid,
+                    route,
+                    directions[std::rand() % 4],
+                    2 + std::rand() % 5);
+            }
+            else if (pattern == 1)
+            {
+                Position firstDirection = directions[std::rand() % 4];
+                Position secondDirection = firstDirection.row == 0
+                    ? directions[std::rand() % 2]
+                    : directions[2 + std::rand() % 2];
 
-                if (!grid.isInBounds(next) ||
-                    grid.getTile(next) == Tile::Wall ||
-                    grid.getTile(next) == Tile::Goal ||
-                    grid.getTile(next) == Tile::Seaweed)
+                appendPatrolLeg(
+                    grid,
+                    route,
+                    firstDirection,
+                    1 + std::rand() % 4);
+
+                appendPatrolLeg(
+                    grid,
+                    route,
+                    secondDirection,
+                    1 + std::rand() % 4);
+            }
+            else if (pattern == 2)
+            {
+                Position firstDirection = directions[std::rand() % 4];
+                Position secondDirection = firstDirection.row == 0
+                    ? directions[std::rand() % 2]
+                    : directions[2 + std::rand() % 2];
+
+                appendPatrolLeg(grid, route, firstDirection, 1 + std::rand() % 3);
+                appendPatrolLeg(grid, route, secondDirection, 1 + std::rand() % 3);
+                appendPatrolLeg(grid, route, {-firstDirection.row, -firstDirection.col}, 1 + std::rand() % 3);
+            }
+            else
+            {
+                int stepCount = 4 + std::rand() % 5;
+
+                for (int step = 0; step < stepCount; ++step)
                 {
-                    break;
+                    Position direction = directions[std::rand() % 4];
+                    appendPatrolStep(grid, route, direction);
                 }
-
-                route.push_back(next);
-                current = next;
             }
 
             if (route.size() > 1)
@@ -183,6 +212,57 @@ namespace octozone
         }
 
         return Path{sharkStart};
+    }
+
+    bool MapGenerator::canUsePatrolPosition(
+        const Grid& grid,
+        const Position& position)
+    {
+        return grid.isInBounds(position) &&
+            grid.getTile(position) != Tile::Wall &&
+            grid.getTile(position) != Tile::Goal &&
+            grid.getTile(position) != Tile::Seaweed;
+    }
+
+    bool MapGenerator::appendPatrolStep(
+        const Grid& grid,
+        Path& route,
+        const Position& direction)
+    {
+        Position current = route.back();
+        Position next{
+            current.row + direction.row,
+            current.col + direction.col
+        };
+
+        if (!canUsePatrolPosition(grid, next))
+        {
+            return false;
+        }
+
+        route.push_back(next);
+        return true;
+    }
+
+    bool MapGenerator::appendPatrolLeg(
+        const Grid& grid,
+        Path& route,
+        const Position& direction,
+        int length)
+    {
+        bool addedStep = false;
+
+        for (int step = 0; step < length; ++step)
+        {
+            if (!appendPatrolStep(grid, route, direction))
+            {
+                break;
+            }
+
+            addedStep = true;
+        }
+
+        return addedStep;
     }
 
     bool MapGenerator::containsPosition(

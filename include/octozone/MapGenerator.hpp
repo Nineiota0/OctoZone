@@ -36,6 +36,21 @@ namespace octozone
             const Grid& grid,
             const Position& sharkStart);
 
+        static bool canUsePatrolPosition(
+            const Grid& grid,
+            const Position& position);
+
+        static bool appendPatrolStep(
+            const Grid& grid,
+            Path& route,
+            const Position& direction);
+
+        static bool appendPatrolLeg(
+            const Grid& grid,
+            Path& route,
+            const Position& direction,
+            int length);
+
         static bool containsPosition(
             const std::vector<GeneratedShark>& sharks,
             const Position& position);
