@@ -65,7 +65,7 @@ namespace octozone
     {
         if (!sharks_.empty())
         {
-            octopusBrain_.update(octopus_, sharks_.front(), grid_);
+            octopusBrain_.update(octopus_, sharks_, grid_);
         }
     }
 

@@ -9,7 +9,7 @@ namespace octozone
     Path HidePlanner::findPathToBestSeaweed(
         const Grid& grid,
         const Octopus& octopus,
-        const Shark& shark,
+        const std::vector<Shark>& sharks,
         const Path& danger) const
     {
         Path bestPath;
@@ -21,7 +21,7 @@ namespace octozone
                 Position position{row, col};
 
                 if (grid.getTile(position) != Tile::Seaweed ||
-                    !DangerSystem::isSafePosition(grid, shark, position, danger))
+                    !DangerSystem::isSafePosition(grid, sharks, position, danger))
                 {
                     continue;
                 }

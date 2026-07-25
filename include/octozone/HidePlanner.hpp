@@ -5,6 +5,8 @@
 #include "octozone/Path.hpp"
 #include "octozone/Shark.hpp"
 
+#include <vector>
+
 namespace octozone
 {
     class HidePlanner
@@ -13,7 +15,7 @@ namespace octozone
         Path findPathToBestSeaweed(
             const Grid& grid,
             const Octopus& octopus,
-            const Shark& shark,
+            const std::vector<Shark>& sharks,
             const Path& danger) const;
 
     private:

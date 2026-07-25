@@ -6,6 +6,8 @@
 #include "octozone/Position.hpp"
 #include "octozone/Shark.hpp"
 
+#include <vector>
+
 namespace octozone
 {
     class DangerSystem
@@ -14,7 +16,7 @@ namespace octozone
         static Path buildDangerPositions(
             const Grid& grid,
             const Octopus& octopus,
-            const Shark& shark);
+            const std::vector<Shark>& sharks);
 
         static Path buildDangerPositionsForShark(
             const Grid& grid,
@@ -25,11 +27,11 @@ namespace octozone
         static Path buildEscapeRiskPositions(
             const Grid& grid,
             const Octopus& octopus,
-            const Shark& shark);
+            const std::vector<Shark>& sharks);
 
         static bool isSafePosition(
             const Grid& grid,
-            const Shark& shark,
+            const std::vector<Shark>& sharks,
             const Position& position,
             const Path& danger);
     };

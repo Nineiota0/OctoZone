@@ -28,27 +28,37 @@ namespace octozone
     Path DangerSystem::buildDangerPositions(
         const Grid& grid,
         const Octopus& octopus,
-        const Shark& shark)
+        const std::vector<Shark>& sharks)
     {
-        Path danger = buildDangerPositionsForShark(
-            grid,
-            shark.getPosition(),
-            shark.getDirection(),
-            shark.isChasing());
+        Path danger;
 
-        Shark::Projection projection = shark.projectAfterOctopusMove(
-            grid,
-            octopus.getPosition());
-
-        Path projectedDanger = buildDangerPositionsForShark(
-            grid,
-            projection.position,
-            projection.direction,
-            projection.state == SharkState::Chase);
-
-        for (Position position : projectedDanger)
+        for (const Shark& shark : sharks)
         {
-            addUniquePosition(danger, position);
+            Path currentDanger = buildDangerPositionsForShark(
+                grid,
+                shark.getPosition(),
+                shark.getDirection(),
+                shark.isChasing());
+
+            for (Position position : currentDanger)
+            {
+                addUniquePosition(danger, position);
+            }
+
+            Shark::Projection projection = shark.projectAfterOctopusMove(
+                grid,
+                octopus.getPosition());
+
+            Path projectedDanger = buildDangerPositionsForShark(
+                grid,
+                projection.position,
+                projection.direction,
+                projection.state == SharkState::Chase);
+
+            for (Position position : projectedDanger)
+            {
+                addUniquePosition(danger, position);
+            }
         }
 
         return danger;
@@ -93,7 +103,7 @@ namespace octozone
     Path DangerSystem::buildEscapeRiskPositions(
         const Grid& grid,
         const Octopus& octopus,
-        const Shark& shark)
+        const std::vector<Shark>& sharks)
     {
         Path blockedPositions;
 
@@ -119,26 +129,37 @@ namespace octozone
             }
         };
 
-        addSharkCollisionRisk(shark.getPosition());
+        for (const Shark& shark : sharks)
+        {
+            addSharkCollisionRisk(shark.getPosition());
 
-        Shark::Projection projection = shark.projectAfterOctopusMove(
-            grid,
-            octopus.getPosition());
+            Shark::Projection projection = shark.projectAfterOctopusMove(
+                grid,
+                octopus.getPosition());
 
-        addSharkCollisionRisk(projection.position);
+            addSharkCollisionRisk(projection.position);
+        }
 
         return blockedPositions;
     }
 
     bool DangerSystem::isSafePosition(
         const Grid& grid,
-        const Shark& shark,
+        const std::vector<Shark>& sharks,
         const Position& position,
         const Path& danger)
     {
         if (grid.getTile(position) == Tile::Seaweed)
         {
-            return position != shark.getPosition();
+            for (const Shark& shark : sharks)
+            {
+                if (position == shark.getPosition())
+                {
+                    return false;
+                }
+            }
+
+            return true;
         }
 
         return !containsPosition(danger, position);

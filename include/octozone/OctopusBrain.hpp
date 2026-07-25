@@ -8,13 +8,14 @@
 #include "octozone/Shark.hpp"
 
 #include <optional>
+#include <vector>
 
 namespace octozone
 {
     class OctopusBrain
     {
     public:
-        void update(Octopus& octopus, Shark& shark, const Grid& grid);
+        void update(Octopus& octopus, const std::vector<Shark>& sharks, const Grid& grid);
 
     private:
         Path addRecentLoopAvoidance(
@@ -40,12 +41,12 @@ namespace octozone
         std::optional<Position> chooseTacticalMove(
             const Grid& grid,
             const Octopus& octopus,
-            const Shark& shark) const;
+            const std::vector<Shark>& sharks) const;
 
         int scoreMove(
             const Grid& grid,
             const Octopus& octopus,
-            const Shark& shark,
+            const std::vector<Shark>& sharks,
             Position move) const;
 
         bool isLooping(const Octopus& octopus) const;

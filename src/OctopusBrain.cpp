@@ -36,19 +36,22 @@ namespace octozone
 
     void OctopusBrain::update(
         Octopus& octopus,
-        Shark& shark,
+        const std::vector<Shark>& sharks,
         const Grid& grid)
     {
-        if (octopus.isHidden(grid))
-        {
-            shark.setState(SharkState::Patrol);
-        }
-
-        Path danger = DangerSystem::buildDangerPositions(grid, octopus, shark);
+        Path danger = DangerSystem::buildDangerPositions(grid, octopus, sharks);
         Path loopAwareDanger = addRecentLoopAvoidance(grid, octopus, danger);
 
+        bool anySharkChasing = std::any_of(
+            sharks.begin(),
+            sharks.end(),
+            [](const Shark& shark)
+            {
+                return shark.isChasing();
+            });
+
         bool octopusThreatened =
-            shark.isChasing() ||
+            anySharkChasing ||
             containsPosition(danger, octopus.getPosition());
 
         if (octopus.getDecision() == OctopusDecision::Hide &&
@@ -103,12 +106,44 @@ namespace octozone
             return;
         }
 
+        Path escapeRisk = DangerSystem::buildEscapeRiskPositions(
+            grid,
+            octopus,
+            sharks);
+
+        Path riskyPathToGoal = goalPlanner_.findPathToGoal(
+            grid,
+            octopus,
+            isLooping(octopus)
+                ? addRecentLoopAvoidance(grid, octopus, escapeRisk)
+                : escapeRisk);
+
+        if (riskyPathToGoal.empty() && isLooping(octopus))
+        {
+            riskyPathToGoal = goalPlanner_.findPathToGoal(
+                grid,
+                octopus,
+                escapeRisk);
+        }
+
+        if (!riskyPathToGoal.empty() &&
+            (isLooping(octopus) || !octopusThreatened) &&
+            scoreMove(grid, octopus, sharks, riskyPathToGoal.front()) >
+                std::numeric_limits<int>::min() / 4)
+        {
+            octopus.clearHideTarget();
+            octopus.setDecision(OctopusDecision::MoveToGoal);
+            octopus.setPath(riskyPathToGoal);
+            moveOneStepWithMemory(octopus);
+            return;
+        }
+
         if (octopusThreatened)
         {
             Path safePathToSeaweed = hidePlanner_.findPathToBestSeaweed(
                 grid,
                 octopus,
-                shark,
+                sharks,
                 loopAwareDanger);
 
             if (safePathToSeaweed.empty())
@@ -116,7 +151,7 @@ namespace octozone
                 safePathToSeaweed = hidePlanner_.findPathToBestSeaweed(
                     grid,
                     octopus,
-                    shark,
+                    sharks,
                     danger);
             }
 
@@ -134,17 +169,14 @@ namespace octozone
             Path riskyPathToSeaweed = findRiskyPathToBestSeaweed(
                 grid,
                 octopus,
-                addRecentLoopAvoidance(
-                    grid,
-                    octopus,
-                    DangerSystem::buildEscapeRiskPositions(grid, octopus, shark)));
+                addRecentLoopAvoidance(grid, octopus, escapeRisk));
 
             if (riskyPathToSeaweed.empty())
             {
                 riskyPathToSeaweed = findRiskyPathToBestSeaweed(
                     grid,
                     octopus,
-                    DangerSystem::buildEscapeRiskPositions(grid, octopus, shark));
+                    escapeRisk);
             }
 
             if (!riskyPathToSeaweed.empty())
@@ -160,7 +192,7 @@ namespace octozone
         }
 
         std::optional<Position> tacticalMove =
-            chooseTacticalMove(grid, octopus, shark);
+            chooseTacticalMove(grid, octopus, sharks);
 
         if (tacticalMove.has_value())
         {
@@ -329,14 +361,14 @@ namespace octozone
     std::optional<Position> OctopusBrain::chooseTacticalMove(
         const Grid& grid,
         const Octopus& octopus,
-        const Shark& shark) const
+        const std::vector<Shark>& sharks) const
     {
         std::optional<Position> bestMove;
         int bestScore = std::numeric_limits<int>::min();
 
         for (Position move : getMoveOptions(grid, octopus))
         {
-            int score = scoreMove(grid, octopus, shark, move);
+            int score = scoreMove(grid, octopus, sharks, move);
 
             if (!bestMove.has_value() ||
                 score > bestScore ||
@@ -360,28 +392,45 @@ namespace octozone
     int OctopusBrain::scoreMove(
         const Grid& grid,
         const Octopus& octopus,
-        const Shark& shark,
+        const std::vector<Shark>& sharks,
         Position move) const
     {
-        Shark::Projection sharkProjection = shark.projectAfterOctopusMove(
-            grid,
-            move);
+        bool anySharkChasing = false;
+        bool anySharkOffPatrol = false;
+        bool pressuredAfterMove = false;
+        Path escapeBlockedPositions =
+            DangerSystem::buildEscapeRiskPositions(grid, octopus, sharks);
 
-        if (move == shark.getPosition() ||
-            move == sharkProjection.position)
+        for (const Shark& shark : sharks)
         {
-            return std::numeric_limits<int>::min() / 2;
+            Shark::Projection sharkProjection = shark.projectAfterOctopusMove(
+                grid,
+                move);
+
+            if (move == shark.getPosition() ||
+                move == sharkProjection.position)
+            {
+                return std::numeric_limits<int>::min() / 2;
+            }
+
+            bool visibleAfterSharkMoves = VisionSystem::canDetect(
+                grid,
+                sharkProjection.position,
+                sharkProjection.direction,
+                move,
+                3);
+
+            bool chasedAfterMove = sharkProjection.state == SharkState::Chase;
+            pressuredAfterMove = pressuredAfterMove ||
+                visibleAfterSharkMoves ||
+                chasedAfterMove;
+            anySharkChasing = anySharkChasing || shark.isChasing();
+            anySharkOffPatrol = anySharkOffPatrol || !shark.isOnPatrolRoute();
+
+            addUniquePosition(
+                escapeBlockedPositions,
+                sharkProjection.position);
         }
-
-        bool visibleAfterSharkMoves = VisionSystem::canDetect(
-            grid,
-            sharkProjection.position,
-            sharkProjection.direction,
-            move,
-            3);
-
-        bool chasedAfterMove = sharkProjection.state == SharkState::Chase;
-        bool pressuredAfterMove = visibleAfterSharkMoves || chasedAfterMove;
 
         int currentGoalDistance = manhattanDistance(
             octopus.getPosition(),
@@ -429,7 +478,7 @@ namespace octozone
 
         if (grid.getTile(move) == Tile::Seaweed)
         {
-            if (shark.isChasing() || pressuredAfterMove)
+            if (anySharkChasing || pressuredAfterMove)
             {
                 score += 520;
             }
@@ -440,7 +489,7 @@ namespace octozone
         }
 
         if (octopus.isHidden(grid) &&
-            !shark.isChasing() &&
+            !anySharkChasing &&
             !pressuredAfterMove &&
             move != octopus.getPosition())
         {
@@ -449,13 +498,6 @@ namespace octozone
 
         if (pressuredAfterMove)
         {
-            Path escapeBlockedPositions =
-                DangerSystem::buildEscapeRiskPositions(grid, octopus, shark);
-
-            addUniquePosition(
-                escapeBlockedPositions,
-                sharkProjection.position);
-
             Path escapePath = findPathToNearestSeaweedFrom(
                 grid,
                 octopus,
@@ -486,7 +528,7 @@ namespace octozone
             score += 90;
         }
 
-        if (!shark.isChasing() && !shark.isOnPatrolRoute())
+        if (!anySharkChasing && anySharkOffPatrol)
         {
             score += 90;
         }
