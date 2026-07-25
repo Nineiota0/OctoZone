@@ -29,6 +29,15 @@ namespace octozone
 
             return nextIndex;
         }
+
+        bool containsPosition(const Path& positions, const Position& position)
+        {
+            return std::find(
+                positions.begin(),
+                positions.end(),
+                position
+            ) != positions.end();
+        }
     }
 
     Shark::Shark(Position start, const Path& patrolRoute)
@@ -114,35 +123,55 @@ namespace octozone
     void Shark::update(
         const Grid& grid,
         Position octopusPosition,
-        bool octopusHidden)
+        bool octopusHidden,
+        const Path& occupiedPositions)
     {
-        if (isChasing() && octopusHidden)
+        bool canSeeOctopus =
+            !octopusHidden &&
+            canDetect(grid, octopusPosition);
+
+        if (canSeeOctopus)
         {
-            setState(SharkState::Patrol);
+            setState(SharkState::Chase);
+            lastKnownOctopusPosition_ = octopusPosition;
         }
 
-        if (isChasing())
+        if (isChasing() && lastKnownOctopusPosition_.has_value())
         {
+            Position target = canSeeOctopus
+                ? octopusPosition
+                : lastKnownOctopusPosition_.value();
+
             Path chasePath = Pathfinder::findPath(
                 grid,
                 position_,
-                octopusPosition);
+                target,
+                occupiedPositions);
 
             if (!chasePath.empty())
             {
                 moveTo(chasePath.front());
+                return;
+            }
+
+            if (!canSeeOctopus)
+            {
+                lastKnownOctopusPosition_.reset();
+                setState(SharkState::Patrol);
             }
 
             return;
         }
 
-        if (!moveTowardPatrolRoute(grid))
+        lastKnownOctopusPosition_.reset();
+
+        if (!moveTowardPatrolRoute(grid, occupiedPositions))
         {
-            moveOneStep();
+            moveOneStep(occupiedPositions);
         }
     }
 
-    void Shark::moveOneStep()
+    void Shark::moveOneStep(const Path& blockedPositions)
     {
         if (patrolRoute_.empty())
         {
@@ -151,11 +180,16 @@ namespace octozone
 
         if (patrolRoute_.size() == 1)
         {
-            position_ = patrolRoute_.front();
+            if (!containsPosition(blockedPositions, patrolRoute_.front()))
+            {
+                position_ = patrolRoute_.front();
+            }
             return;
         }
 
         Position oldPosition = position_;
+        int oldPatrolIndex = patrolIndex_;
+        int oldPatrolDirection = patrolDirection_;
 
         patrolIndex_ += patrolDirection_;
 
@@ -170,7 +204,16 @@ namespace octozone
             patrolIndex_ = 1;
         }
 
-        position_ = patrolRoute_[patrolIndex_];
+        Position nextPosition = patrolRoute_[patrolIndex_];
+
+        if (containsPosition(blockedPositions, nextPosition))
+        {
+            patrolIndex_ = oldPatrolIndex;
+            patrolDirection_ = oldPatrolDirection;
+            return;
+        }
+
+        position_ = nextPosition;
 
         direction_ = {
             position_.row - oldPosition.row,
@@ -204,13 +247,19 @@ namespace octozone
         position_ = position;
     }
 
-    Path Shark::findPathToNearestPatrolPoint(const Grid& grid) const
+    Path Shark::findPathToNearestPatrolPoint(
+        const Grid& grid,
+        const Path& blockedPositions) const
     {
         Path bestPath;
 
         for (Position position : patrolRoute_)
         {
-            Path path = Pathfinder::findPath(grid, position_, position);
+            Path path = Pathfinder::findPath(
+                grid,
+                position_,
+                position,
+                blockedPositions);
 
             if (!path.empty() &&
                 (bestPath.empty() || path.size() < bestPath.size()))
@@ -222,7 +271,9 @@ namespace octozone
         return bestPath;
     }
 
-    bool Shark::moveTowardPatrolRoute(const Grid& grid)
+    bool Shark::moveTowardPatrolRoute(
+        const Grid& grid,
+        const Path& blockedPositions)
     {
         if (isOnPatrolRoute())
         {
@@ -230,7 +281,9 @@ namespace octozone
             return false;
         }
 
-        Path returnPath = findPathToNearestPatrolPoint(grid);
+        Path returnPath = findPathToNearestPatrolPoint(
+            grid,
+            blockedPositions);
 
         if (returnPath.empty())
         {

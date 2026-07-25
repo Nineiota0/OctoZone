@@ -16,6 +16,8 @@ add_executable(OctoZone
     src/VisionSystem.cpp
     src/MapGenerator.cpp
     src/OctopusBrain.cpp
+    src/OctopusMemory.cpp
+    src/PerceptionSystem.cpp
     src/DangerSystem.cpp
     src/GoalPlanner.cpp
     src/HidePlanner.cpp

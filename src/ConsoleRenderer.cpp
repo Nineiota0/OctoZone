@@ -80,6 +80,57 @@ namespace octozone
 
             std::cout << '\n';
         }
+
+        printDebugInfo(octopus);
+    }
+
+    void ConsoleRenderer::printDebugInfo(const Octopus& octopus) const
+    {
+        std::cout
+            << "Decision: "
+            << decisionToText(octopus.getDecision())
+            << " | Objective: ";
+
+        if (octopus.getDecision() == OctopusDecision::Hide &&
+            octopus.getHideTarget().has_value())
+        {
+            Position hideTarget = octopus.getHideTarget().value();
+            std::cout
+                << "Hide at ("
+                << hideTarget.row
+                << ", "
+                << hideTarget.col
+                << ")";
+        }
+        else if (octopus.getDecision() == OctopusDecision::MoveToGoal)
+        {
+            Position goal = octopus.getGoal();
+            std::cout
+                << "Goal ("
+                << goal.row
+                << ", "
+                << goal.col
+                << ")";
+        }
+        else
+        {
+            std::cout << "Wait";
+        }
+
+        std::cout << '\n';
+    }
+
+    const char* ConsoleRenderer::decisionToText(
+        OctopusDecision decision) const
+    {
+        switch (decision)
+        {
+            case OctopusDecision::MoveToGoal: return "MoveToGoal";
+            case OctopusDecision::Hide: return "Hide";
+            case OctopusDecision::Wait: return "Wait";
+        }
+
+        return "Unknown";
     }
 
     void ConsoleRenderer::printTile(Tile tile) const

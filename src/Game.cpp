@@ -1,4 +1,5 @@
 #include <chrono>
+#include <algorithm>
 #include <cstdlib>
 #include <iostream>
 #include <thread>
@@ -8,6 +9,22 @@
 
 namespace octozone
 {
+    namespace
+    {
+        void removeFirstPosition(Path& positions, Position position)
+        {
+            auto found = std::find(
+                positions.begin(),
+                positions.end(),
+                position);
+
+            if (found != positions.end())
+            {
+                positions.erase(found);
+            }
+        }
+    }
+
     Game::Game()
         : grid_(25, 25),
           renderer_(),
@@ -71,12 +88,24 @@ namespace octozone
 
     void Game::updateSharks()
     {
+        Path occupiedPositions;
+
+        for (const Shark& shark : sharks_)
+        {
+            occupiedPositions.push_back(shark.getPosition());
+        }
+
         for (Shark& shark : sharks_)
         {
+            removeFirstPosition(occupiedPositions, shark.getPosition());
+
             shark.update(
                 grid_,
                 octopus_.getPosition(),
-                octopus_.isHidden(grid_));
+                octopus_.isHidden(grid_),
+                occupiedPositions);
+
+            occupiedPositions.push_back(shark.getPosition());
         }
     }
 
@@ -104,7 +133,8 @@ namespace octozone
     {
         for (Shark& shark : sharks_)
         {
-            if (shark.canDetect(grid_, octopus_.getPosition()))
+            if (!octopus_.isHidden(grid_) &&
+                shark.canDetect(grid_, octopus_.getPosition()))
             {
                 shark.setState(SharkState::Chase);
             }

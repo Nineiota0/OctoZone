@@ -5,6 +5,8 @@
 #include "octozone/Position.hpp"
 #include "octozone/SharkState.hpp"
 
+#include <optional>
+
 namespace octozone
 {
 
@@ -32,12 +34,20 @@ namespace octozone
         bool isOnPatrolRoute() const;
         bool canDetect(const Grid& grid, Position octopusPosition, int range = 3) const;
 
-        void update(const Grid& grid, Position octopusPosition, bool octopusHidden);
-        void moveOneStep();
+        void update(
+            const Grid& grid,
+            Position octopusPosition,
+            bool octopusHidden,
+            const Path& occupiedPositions);
+        void moveOneStep(const Path& blockedPositions = {});
         void moveTo(Position position);
         void syncPatrolToPosition(Position position);
-        Path findPathToNearestPatrolPoint(const Grid& grid) const;
-        bool moveTowardPatrolRoute(const Grid& grid);
+        Path findPathToNearestPatrolPoint(
+            const Grid& grid,
+            const Path& blockedPositions = {}) const;
+        bool moveTowardPatrolRoute(
+            const Grid& grid,
+            const Path& blockedPositions = {});
         Projection projectAfterOctopusMove(
             const Grid& grid,
             Position octopusPosition) const;
@@ -52,6 +62,7 @@ namespace octozone
         Position direction_{0, 0};
 
         SharkState state_{SharkState::Patrol};
+        std::optional<Position> lastKnownOctopusPosition_;
     };
 
 }

@@ -39,12 +39,18 @@ namespace octozone
         const std::vector<Shark>& sharks,
         const Grid& grid)
     {
-        Path danger = DangerSystem::buildDangerPositions(grid, octopus, sharks);
+        memory_.update(grid, octopus, sharks);
+        std::vector<Shark> knownSharks = memory_.getKnownSharks();
+
+        Path danger = DangerSystem::buildDangerPositions(
+            grid,
+            octopus,
+            knownSharks);
         Path loopAwareDanger = addRecentLoopAvoidance(grid, octopus, danger);
 
         bool anySharkChasing = std::any_of(
-            sharks.begin(),
-            sharks.end(),
+            knownSharks.begin(),
+            knownSharks.end(),
             [](const Shark& shark)
             {
                 return shark.isChasing();
@@ -75,7 +81,7 @@ namespace octozone
                 if (!pathToHideTarget.empty())
                 {
                     octopus.setPath(pathToHideTarget);
-                    moveOneStepWithMemory(octopus);
+                    executePlannedMove(grid, octopus, sharks, knownSharks);
                     return;
                 }
 
@@ -102,14 +108,14 @@ namespace octozone
             octopus.clearHideTarget();
             octopus.setDecision(OctopusDecision::MoveToGoal);
             octopus.setPath(safePathToGoal);
-            moveOneStepWithMemory(octopus);
+            executePlannedMove(grid, octopus, sharks, knownSharks);
             return;
         }
 
         Path escapeRisk = DangerSystem::buildEscapeRiskPositions(
             grid,
             octopus,
-            sharks);
+            knownSharks);
 
         Path riskyPathToGoal = goalPlanner_.findPathToGoal(
             grid,
@@ -128,13 +134,13 @@ namespace octozone
 
         if (!riskyPathToGoal.empty() &&
             (isLooping(octopus) || !octopusThreatened) &&
-            scoreMove(grid, octopus, sharks, riskyPathToGoal.front()) >
+            scoreMove(grid, octopus, knownSharks, riskyPathToGoal.front()) >
                 std::numeric_limits<int>::min() / 4)
         {
             octopus.clearHideTarget();
             octopus.setDecision(OctopusDecision::MoveToGoal);
             octopus.setPath(riskyPathToGoal);
-            moveOneStepWithMemory(octopus);
+            executePlannedMove(grid, octopus, sharks, knownSharks);
             return;
         }
 
@@ -143,7 +149,7 @@ namespace octozone
             Path safePathToSeaweed = hidePlanner_.findPathToBestSeaweed(
                 grid,
                 octopus,
-                sharks,
+                knownSharks,
                 loopAwareDanger);
 
             if (safePathToSeaweed.empty())
@@ -151,7 +157,7 @@ namespace octozone
                 safePathToSeaweed = hidePlanner_.findPathToBestSeaweed(
                     grid,
                     octopus,
-                    sharks,
+                    knownSharks,
                     danger);
             }
 
@@ -162,7 +168,7 @@ namespace octozone
                 octopus.setHideTarget(hideTarget);
                 octopus.setDecision(OctopusDecision::Hide);
                 octopus.setPath(safePathToSeaweed);
-                moveOneStepWithMemory(octopus);
+                executePlannedMove(grid, octopus, sharks, knownSharks);
                 return;
             }
 
@@ -186,13 +192,13 @@ namespace octozone
                 octopus.setHideTarget(hideTarget);
                 octopus.setDecision(OctopusDecision::Hide);
                 octopus.setPath(riskyPathToSeaweed);
-                moveOneStepWithMemory(octopus);
+                executePlannedMove(grid, octopus, sharks, knownSharks);
                 return;
             }
         }
 
         std::optional<Position> tacticalMove =
-            chooseTacticalMove(grid, octopus, sharks);
+            chooseTacticalMove(grid, octopus, knownSharks);
 
         if (tacticalMove.has_value())
         {
@@ -218,7 +224,7 @@ namespace octozone
             }
 
             octopus.setPath(Path{nextPosition});
-            moveOneStepWithMemory(octopus);
+            executePlannedMove(grid, octopus, sharks, knownSharks);
             return;
         }
 
@@ -232,7 +238,7 @@ namespace octozone
     {
         Path loopAwareBlockedPositions = blockedPositions;
 
-        for (Position position : recentPositions_)
+        for (Position position : octopus.getRecentPositions())
         {
             if (position == octopus.getPosition() ||
                 position == octopus.getGoal() ||
@@ -465,13 +471,14 @@ namespace octozone
         }
 
         int recentVisits = static_cast<int>(std::count(
-            recentPositions_.begin(),
-            recentPositions_.end(),
+            octopus.getRecentPositions().begin(),
+            octopus.getRecentPositions().end(),
             move));
 
         score -= recentVisits * 120;
 
-        if (isLooping(octopus) && containsPosition(recentPositions_, move))
+        if (isLooping(octopus) &&
+            containsPosition(octopus.getRecentPositions(), move))
         {
             score -= 220;
         }
@@ -536,23 +543,138 @@ namespace octozone
         return score;
     }
 
-    bool OctopusBrain::isLooping(const Octopus& octopus) const
+    bool OctopusBrain::executePlannedMove(
+        const Grid& grid,
+        Octopus& octopus,
+        const std::vector<Shark>& actualSharks,
+        const std::vector<Shark>& knownSharks) const
     {
-        return std::count(
-            recentPositions_.begin(),
-            recentPositions_.end(),
-            octopus.getPosition()) >= 2;
-    }
-
-    void OctopusBrain::moveOneStepWithMemory(Octopus& octopus)
-    {
-        recentPositions_.push_back(octopus.getPosition());
-
-        if (recentPositions_.size() > 12)
+        if (!octopus.hasPath())
         {
-            recentPositions_.erase(recentPositions_.begin());
+            octopus.setDecision(OctopusDecision::Wait);
+            return false;
         }
 
+        Position intendedMove = octopus.getNextPathPosition().value();
+
+        if (isImmediatelySafeMove(grid, actualSharks, intendedMove))
+        {
+            octopus.moveOneStep();
+            return true;
+        }
+
+        std::optional<Position> fallback = chooseSurvivalMove(
+            grid,
+            octopus,
+            actualSharks,
+            knownSharks);
+
+        if (!fallback.has_value() || fallback.value() == octopus.getPosition())
+        {
+            octopus.setDecision(OctopusDecision::Wait);
+            return false;
+        }
+
+        if (grid.getTile(fallback.value()) == Tile::Seaweed)
+        {
+            octopus.setHideTarget(fallback.value());
+            octopus.setDecision(OctopusDecision::Hide);
+        }
+        else
+        {
+            octopus.clearHideTarget();
+            octopus.setDecision(OctopusDecision::MoveToGoal);
+        }
+
+        octopus.setPath(Path{fallback.value()});
         octopus.moveOneStep();
+        return true;
+    }
+
+    std::optional<Position> OctopusBrain::chooseSurvivalMove(
+        const Grid& grid,
+        const Octopus& octopus,
+        const std::vector<Shark>& actualSharks,
+        const std::vector<Shark>& knownSharks) const
+    {
+        std::optional<Position> bestMove;
+        int bestScore = std::numeric_limits<int>::min();
+
+        for (Position move : getMoveOptions(grid, octopus))
+        {
+            if (!isImmediatelySafeMove(grid, actualSharks, move))
+            {
+                continue;
+            }
+
+            int score = scoreMove(grid, octopus, knownSharks, move);
+            score += (manhattanDistance(octopus.getPosition(), octopus.getGoal()) -
+                manhattanDistance(move, octopus.getGoal())) * 80;
+
+            if (grid.getTile(move) == Tile::Seaweed)
+            {
+                score += 350;
+            }
+
+            if (move == octopus.getPosition())
+            {
+                score -= 100;
+            }
+
+            if (!bestMove.has_value() ||
+                score > bestScore ||
+                (score == bestScore &&
+                 manhattanDistance(move, octopus.getGoal()) <
+                     manhattanDistance(bestMove.value(), octopus.getGoal())))
+            {
+                bestMove = move;
+                bestScore = score;
+            }
+        }
+
+        return bestMove;
+    }
+
+    bool OctopusBrain::isImmediatelySafeMove(
+        const Grid& grid,
+        const std::vector<Shark>& sharks,
+        Position move) const
+    {
+        if (!grid.isInBounds(move) || grid.getTile(move) == Tile::Wall)
+        {
+            return false;
+        }
+
+        bool moveIsSeaweed = grid.getTile(move) == Tile::Seaweed;
+
+        for (const Shark& shark : sharks)
+        {
+            if (move == shark.getPosition())
+            {
+                return false;
+            }
+
+            Shark::Projection projection = shark.projectAfterOctopusMove(
+                grid,
+                move);
+
+            if (move == projection.position)
+            {
+                return false;
+            }
+
+            if (!moveIsSeaweed &&
+                manhattanDistance(move, shark.getPosition()) <= 1)
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    bool OctopusBrain::isLooping(const Octopus& octopus) const
+    {
+        return octopus.isOscillating();
     }
 }

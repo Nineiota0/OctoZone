@@ -20,7 +20,10 @@ namespace octozone
 
         void setPath(Path path);
         bool hasPath() const;
+        std::optional<Position> getNextPathPosition() const;
         void moveOneStep();
+        const Path& getRecentPositions() const;
+        bool isOscillating() const;
 
         OctopusDecision getDecision() const;
         void setDecision(OctopusDecision decision);
@@ -33,6 +36,7 @@ namespace octozone
         Position position_;
         Position goal_;
         Path path_;
+        Path recentPositions_;
 
         OctopusDecision decision_{OctopusDecision::MoveToGoal};
         std::optional<Position> hideTarget_;

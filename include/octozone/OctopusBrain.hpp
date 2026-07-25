@@ -3,6 +3,7 @@
 #include "octozone/GoalPlanner.hpp"
 #include "octozone/Grid.hpp"
 #include "octozone/HidePlanner.hpp"
+#include "octozone/OctopusMemory.hpp"
 #include "octozone/Octopus.hpp"
 #include "octozone/Path.hpp"
 #include "octozone/Shark.hpp"
@@ -49,12 +50,27 @@ namespace octozone
             const std::vector<Shark>& sharks,
             Position move) const;
 
+        bool executePlannedMove(
+            const Grid& grid,
+            Octopus& octopus,
+            const std::vector<Shark>& actualSharks,
+            const std::vector<Shark>& knownSharks) const;
+
+        std::optional<Position> chooseSurvivalMove(
+            const Grid& grid,
+            const Octopus& octopus,
+            const std::vector<Shark>& actualSharks,
+            const std::vector<Shark>& knownSharks) const;
+
+        bool isImmediatelySafeMove(
+            const Grid& grid,
+            const std::vector<Shark>& sharks,
+            Position move) const;
+
         bool isLooping(const Octopus& octopus) const;
-        void moveOneStepWithMemory(Octopus& octopus);
 
         GoalPlanner goalPlanner_;
         HidePlanner hidePlanner_;
-
-        Path recentPositions_;
+        OctopusMemory memory_;
     };
 }
