@@ -51,10 +51,7 @@ namespace octozone
             std::system("cls");
 
             render();
-            update();
-
-            checkLoseCondition();
-            checkWinCondition();
+            resolveTurn();
 
             std::this_thread::sleep_for(std::chrono::milliseconds(400));
         }
@@ -74,9 +71,43 @@ namespace octozone
 
     void Game::update()
     {
+        resolveTurn();
+    }
+
+    void Game::resolveTurn()
+    {
+        // Turn order:
+        // 1. Sharks acquire visible targets from the rendered world state.
+        // 2. Octopus moves.
+        // 3. Immediate collision is resolved.
+        // 4. Sharks update awareness/state and move.
+        // 5. Collision, including position swaps, is resolved.
+        // 6. Goal is resolved after capture checks.
         refreshSharkChases();
+
+        Position previousOctopusPosition = octopus_.getPosition();
+        std::vector<Position> previousSharkPositions;
+
+        for (const Shark& shark : sharks_)
+        {
+            previousSharkPositions.push_back(shark.getPosition());
+        }
+
         updateOctopus();
+
+        if (resolveCapture(previousOctopusPosition, previousSharkPositions, false))
+        {
+            return;
+        }
+
         updateSharks();
+
+        if (resolveCapture(previousOctopusPosition, previousSharkPositions, true))
+        {
+            return;
+        }
+
+        resolveGoal();
     }
 
     void Game::updateOctopus()
@@ -100,7 +131,8 @@ namespace octozone
         {
             removeFirstPosition(occupiedPositions, shark.getPosition());
 
-            shark.update(
+            sharkBrain_.update(
+                shark,
                 grid_,
                 octopus_.getPosition(),
                 octopus_.isHidden(grid_),
@@ -114,20 +146,6 @@ namespace octozone
     {
         renderer_.draw(grid_, octopus_, sharks_);
         std::cout << '\n';
-    }
-
-    void Game::initializeMap()
-    {
-        // Map generation now handles terrain setup.
-    }
-
-    void Game::checkWinCondition()
-    {
-        if (octopus_.getPosition() == octopus_.getGoal())
-        {
-            gameOver_ = true;
-            playerWon_ = true;
-        }
     }
 
     void Game::refreshSharkChases()
@@ -146,18 +164,43 @@ namespace octozone
         }
     }
 
-    void Game::checkLoseCondition()
+    bool Game::resolveCapture(
+        Position previousOctopusPosition,
+        const std::vector<Position>& previousSharkPositions,
+        bool includeSwaps)
     {
         refreshSharkChases();
 
-        for (Shark& shark : sharks_)
+        for (std::size_t index = 0; index < sharks_.size(); ++index)
         {
-            if (shark.getPosition() == octopus_.getPosition())
+            const Shark& shark = sharks_[index];
+
+            bool samePosition =
+                shark.getPosition() == octopus_.getPosition();
+
+            bool swappedPositions =
+                includeSwaps &&
+                index < previousSharkPositions.size() &&
+                previousSharkPositions[index] == octopus_.getPosition() &&
+                shark.getPosition() == previousOctopusPosition;
+
+            if (samePosition || swappedPositions)
             {
                 gameOver_ = true;
                 playerWon_ = false;
-                return;
+                return true;
             }
+        }
+
+        return false;
+    }
+
+    void Game::resolveGoal()
+    {
+        if (octopus_.getPosition() == octopus_.getGoal())
+        {
+            gameOver_ = true;
+            playerWon_ = true;
         }
     }
 }

@@ -13,6 +13,7 @@ add_executable(OctoZone
     src/Pathfinder.cpp
     src/Octopus.cpp
     src/Shark.cpp
+    src/SharkBrain.cpp
     src/VisionSystem.cpp
     src/MapGenerator.cpp
     src/OctopusBrain.cpp

@@ -5,7 +5,9 @@ namespace octozone
     enum class SharkState 
     {
         Patrol,
-        Chase
+        Chase,
+        Search,
+        ReturnToPatrol
     };
 
 }

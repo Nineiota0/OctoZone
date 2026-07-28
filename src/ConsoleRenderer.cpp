@@ -137,6 +137,18 @@ namespace octozone
     {
         switch (tile)
         {
+            case Tile::Empty:
+                std::cout << ". ";
+                break;
+
+            case Tile::Wall:
+                std::cout << "# ";
+                break;
+
+            case Tile::Start:
+                std::cout << "S ";
+                break;
+
             case Tile::Goal:
                 std::cout << "\033[34mG\033[0m ";
                 break;
@@ -144,27 +156,7 @@ namespace octozone
             case Tile::Seaweed:
                 std::cout << "\033[32m~\033[0m ";
                 break;
-
-            default:
-                std::cout << tileToChar(tile) << ' ';
-                break;
         }
-    }
-
-    char ConsoleRenderer::tileToChar(Tile tile) const
-    {
-        switch (tile)
-        {
-            case Tile::Empty: return '.';
-            case Tile::Wall: return '#';
-            case Tile::Start: return 'S';
-            case Tile::Goal: return 'G';
-            case Tile::Octopus: return 'O';
-            case Tile::Shark: return 'X';
-            case Tile::Seaweed: return '~';
-        }
-
-        return '?';
     }
 
 }

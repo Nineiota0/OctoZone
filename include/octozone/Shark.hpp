@@ -31,15 +31,16 @@ namespace octozone
         SharkState getState() const;
         void setState(SharkState state);
         void beginChase(Position octopusPosition);
+        void beginSearch(Position lastKnownOctopusPosition, int turns);
+        void rememberOctopusPosition(Position octopusPosition);
+        std::optional<Position> getLastKnownOctopusPosition() const;
+        int getSearchTurnsRemaining() const;
+        void setSearchTurnsRemaining(int turns);
+        void decrementSearchTurns();
         bool isChasing() const;
         bool isOnPatrolRoute() const;
         bool canDetect(const Grid& grid, Position octopusPosition, int range = 3) const;
 
-        void update(
-            const Grid& grid,
-            Position octopusPosition,
-            bool octopusHidden,
-            const Path& occupiedPositions);
         void moveOneStep(const Path& blockedPositions = {});
         void moveTo(Position position);
         void syncPatrolToPosition(Position position);
@@ -64,6 +65,7 @@ namespace octozone
 
         SharkState state_{SharkState::Patrol};
         std::optional<Position> lastKnownOctopusPosition_;
+        int searchTurnsRemaining_{0};
     };
 
 }

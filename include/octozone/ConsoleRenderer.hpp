@@ -20,7 +20,6 @@ namespace octozone
     private:
         void printDebugInfo(const Octopus& octopus) const;
         const char* decisionToText(OctopusDecision decision) const;
-        char tileToChar(Tile tile) const;
         void printTile(Tile tile) const;
     };
 

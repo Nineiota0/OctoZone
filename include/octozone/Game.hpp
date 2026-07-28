@@ -5,6 +5,7 @@
 #include "octozone/Octopus.hpp"
 #include "octozone/OctopusBrain.hpp"
 #include "octozone/Shark.hpp"
+#include "octozone/SharkBrain.hpp"
 
 #include <vector>
 
@@ -23,19 +24,23 @@ namespace octozone
         Octopus octopus_;
         std::vector<Shark> sharks_;
         OctopusBrain octopusBrain_;
+        SharkBrain sharkBrain_;
 
         bool gameOver_{false};
         bool playerWon_{false};
 
-        void initializeMap();
         void update();
+        void resolveTurn();
         void render();
 
         void updateOctopus();
         void updateSharks();
 
         void refreshSharkChases();
-        void checkWinCondition();
-        void checkLoseCondition();
+        bool resolveCapture(
+            Position previousOctopusPosition,
+            const std::vector<Position>& previousSharkPositions,
+            bool includeSwaps);
+        void resolveGoal();
     };
 }
