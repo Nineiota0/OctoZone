@@ -39,6 +39,7 @@ namespace octozone
 
         grid_ = generatedMap.grid;
         octopus_ = Octopus(generatedMap.octopusStart, generatedMap.goal);
+        mapSeed_ = generatedMap.seed;
 
         for (const GeneratedShark& generatedShark : generatedMap.sharks)
         {
@@ -51,7 +52,7 @@ namespace octozone
 
     void Game::run()
     {
-        while (!gameOver_)
+        while (isRunning())
         {
             renderer_->clear();
             render();
@@ -62,7 +63,7 @@ namespace octozone
 
         renderer_->clear();
         render();
-        renderer_->drawResult(playerWon_, timedOut_);
+        renderer_->drawResult(result_);
     }
 
     void Game::update()
@@ -83,9 +84,7 @@ namespace octozone
 
         if (turnCount_ > maxTurns_)
         {
-            gameOver_ = true;
-            playerWon_ = false;
-            timedOut_ = true;
+            result_ = GameResult::TimedOut;
             return;
         }
 
@@ -150,7 +149,37 @@ namespace octozone
 
     void Game::render()
     {
-        renderer_->draw(grid_, octopus_, sharks_);
+        renderer_->draw(grid_, octopus_, sharks_, buildDebugInfo());
+    }
+
+    DebugInfo Game::buildDebugInfo() const
+    {
+        DebugInfo debugInfo;
+        debugInfo.octopusDecision = octopus_.getDecision();
+        debugInfo.octopusPathLength = octopus_.getPathLength();
+        debugInfo.mapSeed = mapSeed_;
+        debugInfo.turnCount = turnCount_;
+        debugInfo.maxTurns = maxTurns_;
+
+        if (octopus_.getDecision() == OctopusDecision::Hide)
+        {
+            debugInfo.octopusObjective = octopus_.getHideTarget();
+        }
+        else if (octopus_.getDecision() == OctopusDecision::MoveToGoal)
+        {
+            debugInfo.octopusObjective = octopus_.getGoal();
+        }
+
+        for (const Shark& shark : sharks_)
+        {
+            debugInfo.sharks.push_back({
+                shark.getState(),
+                shark.getLastKnownOctopusPosition(),
+                shark.getSearchTurnsRemaining()
+            });
+        }
+
+        return debugInfo;
     }
 
     void Game::refreshSharkChases()
@@ -191,8 +220,7 @@ namespace octozone
 
             if (samePosition || swappedPositions)
             {
-                gameOver_ = true;
-                playerWon_ = false;
+                result_ = GameResult::OctopusCaught;
                 return true;
             }
         }
@@ -204,8 +232,12 @@ namespace octozone
     {
         if (octopus_.getPosition() == octopus_.getGoal())
         {
-            gameOver_ = true;
-            playerWon_ = true;
+            result_ = GameResult::OctopusEscaped;
         }
+    }
+
+    bool Game::isRunning() const
+    {
+        return result_ == GameResult::Running;
     }
 }

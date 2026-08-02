@@ -106,7 +106,8 @@ namespace octozone
                 grid,
                 octopusStart,
                 goal,
-                sharks
+                sharks,
+                seed
             };
 
             if (isValidGeneratedMap(map))

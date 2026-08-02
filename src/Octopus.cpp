@@ -33,6 +33,11 @@ namespace octozone
         return !path_.empty();
     }
 
+    int Octopus::getPathLength() const
+    {
+        return static_cast<int>(path_.size());
+    }
+
     std::optional<Position> Octopus::getNextPathPosition() const
     {
         if (path_.empty())

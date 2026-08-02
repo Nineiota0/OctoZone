@@ -21,6 +21,7 @@ namespace octozone
         Position octopusStart;
         Position goal;
         std::vector<GeneratedShark> sharks;
+        unsigned int seed{};
     };
 
     class MapGenerator

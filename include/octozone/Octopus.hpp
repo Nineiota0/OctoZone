@@ -20,6 +20,7 @@ namespace octozone
 
         void setPath(Path path);
         bool hasPath() const;
+        int getPathLength() const;
         std::optional<Position> getNextPathPosition() const;
         void moveOneStep();
         const Path& getRecentPositions() const;

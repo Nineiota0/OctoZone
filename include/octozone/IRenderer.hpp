@@ -1,5 +1,7 @@
 #pragma once
 
+#include "octozone/DebugInfo.hpp"
+#include "octozone/GameResult.hpp"
 #include "octozone/Grid.hpp"
 #include "octozone/Octopus.hpp"
 #include "octozone/Shark.hpp"
@@ -18,8 +20,9 @@ namespace octozone
         virtual void draw(
             const Grid& grid,
             const Octopus& octopus,
-            const std::vector<Shark>& sharks) = 0;
+            const std::vector<Shark>& sharks,
+            const DebugInfo& debugInfo) = 0;
 
-        virtual void drawResult(bool playerWon, bool timedOut) = 0;
+        virtual void drawResult(GameResult result) = 0;
     };
 }

@@ -14,7 +14,8 @@ namespace octozone
     void ConsoleRenderer::draw(
         const Grid& grid,
         const Octopus& octopus,
-        const std::vector<Shark>& sharks)
+        const std::vector<Shark>& sharks,
+        const DebugInfo& debugInfo)
     {
         Path visiblePositions;
 
@@ -86,59 +87,90 @@ namespace octozone
             std::cout << '\n';
         }
 
-        printDebugInfo(octopus);
+        printDebugInfo(debugInfo);
     }
 
-    void ConsoleRenderer::drawResult(bool playerWon, bool timedOut)
+    void ConsoleRenderer::drawResult(GameResult result)
     {
-        if (timedOut)
+        switch (result)
         {
-            std::cout << "Octopus ran out of time! Game over.\n";
-        }
-        else if (playerWon)
-        {
-            std::cout << "Octopus escaped! You win!\n";
-        }
-        else
-        {
-            std::cout << "Octopus caught! Game over.\n";
+            case GameResult::OctopusEscaped:
+                std::cout << "Octopus escaped! You win!\n";
+                break;
+
+            case GameResult::OctopusCaught:
+                std::cout << "Octopus caught! Game over.\n";
+                break;
+
+            case GameResult::TimedOut:
+                std::cout << "Octopus ran out of time! Game over.\n";
+                break;
+
+            case GameResult::Running:
+                break;
         }
     }
 
-    void ConsoleRenderer::printDebugInfo(const Octopus& octopus) const
+    void ConsoleRenderer::printDebugInfo(const DebugInfo& debugInfo) const
     {
         std::cout
+            << "Seed: "
+            << debugInfo.mapSeed
+            << " | Turn: "
+            << debugInfo.turnCount
+            << "/"
+            << debugInfo.maxTurns
+            << " | "
             << "Decision: "
-            << decisionToText(octopus.getDecision())
+            << decisionToText(debugInfo.octopusDecision)
             << " | Objective: ";
 
-        if (octopus.getDecision() == OctopusDecision::Hide &&
-            octopus.getHideTarget().has_value())
+        if (debugInfo.octopusObjective.has_value())
         {
-            Position hideTarget = octopus.getHideTarget().value();
+            Position objective = debugInfo.octopusObjective.value();
             std::cout
-                << "Hide at ("
-                << hideTarget.row
+                << "("
+                << objective.row
                 << ", "
-                << hideTarget.col
-                << ")";
-        }
-        else if (octopus.getDecision() == OctopusDecision::MoveToGoal)
-        {
-            Position goal = octopus.getGoal();
-            std::cout
-                << "Goal ("
-                << goal.row
-                << ", "
-                << goal.col
+                << objective.col
                 << ")";
         }
         else
         {
-            std::cout << "Wait";
+            std::cout << "None";
         }
 
-        std::cout << '\n';
+        std::cout
+            << " | Path: "
+            << debugInfo.octopusPathLength
+            << '\n';
+
+        for (std::size_t index = 0; index < debugInfo.sharks.size(); ++index)
+        {
+            const SharkDebugInfo& shark = debugInfo.sharks[index];
+
+            std::cout
+                << "Shark "
+                << index
+                << ": "
+                << sharkStateToText(shark.state)
+                << " | Last target: ";
+
+            if (shark.lastKnownTarget.has_value())
+            {
+                Position target = shark.lastKnownTarget.value();
+                std::cout << "(" << target.row << ", " << target.col << ")";
+            }
+            else
+            {
+                std::cout << "None";
+            }
+
+            std::cout
+                << " | Search: "
+                << shark.searchTurnsRemaining
+                << '\n';
+        }
     }
 
     const char* ConsoleRenderer::decisionToText(
@@ -149,6 +181,19 @@ namespace octozone
             case OctopusDecision::MoveToGoal: return "MoveToGoal";
             case OctopusDecision::Hide: return "Hide";
             case OctopusDecision::Wait: return "Wait";
+        }
+
+        return "Unknown";
+    }
+
+    const char* ConsoleRenderer::sharkStateToText(SharkState state) const
+    {
+        switch (state)
+        {
+            case SharkState::Patrol: return "Patrol";
+            case SharkState::Chase: return "Chase";
+            case SharkState::Search: return "Search";
+            case SharkState::ReturnToPatrol: return "ReturnToPatrol";
         }
 
         return "Unknown";

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "octozone/Grid.hpp"
+#include "octozone/GameResult.hpp"
 #include "octozone/IRenderer.hpp"
 #include "octozone/Octopus.hpp"
 #include "octozone/OctopusBrain.hpp"
@@ -28,15 +29,15 @@ namespace octozone
         OctopusBrain octopusBrain_;
         SharkBrain sharkBrain_;
 
-        bool gameOver_{false};
-        bool playerWon_{false};
-        bool timedOut_{false};
+        GameResult result_{GameResult::Running};
+        unsigned int mapSeed_{};
         int turnCount_{0};
-        static constexpr int maxTurns_{350};
+        static constexpr int maxTurns_{150};
 
         void update();
         void resolveTurn();
         void render();
+        DebugInfo buildDebugInfo() const;
 
         void updateOctopus();
         void updateSharks();
@@ -47,5 +48,6 @@ namespace octozone
             const std::vector<Position>& previousSharkPositions,
             bool includeSwaps);
         void resolveGoal();
+        bool isRunning() const;
     };
 }

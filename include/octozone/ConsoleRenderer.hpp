@@ -18,13 +18,15 @@ namespace octozone
         void draw(
             const Grid& grid,
             const Octopus& octopus,
-            const std::vector<Shark>& sharks) override;
+            const std::vector<Shark>& sharks,
+            const DebugInfo& debugInfo) override;
 
-        void drawResult(bool playerWon, bool timedOut) override;
+        void drawResult(GameResult result) override;
 
     private:
-        void printDebugInfo(const Octopus& octopus) const;
+        void printDebugInfo(const DebugInfo& debugInfo) const;
         const char* decisionToText(OctopusDecision decision) const;
+        const char* sharkStateToText(SharkState state) const;
         void printTile(Tile tile) const;
     };
 
