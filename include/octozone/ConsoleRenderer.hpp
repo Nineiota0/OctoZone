@@ -1,6 +1,7 @@
 #pragma once
 
 #include "octozone/Grid.hpp"
+#include "octozone/IRenderer.hpp"
 #include "octozone/Octopus.hpp"
 #include "octozone/Shark.hpp"
 
@@ -9,13 +10,17 @@
 namespace octozone
 {
 
-    class ConsoleRenderer
+    class ConsoleRenderer : public IRenderer
     {
     public:
+        void clear() override;
+
         void draw(
             const Grid& grid,
             const Octopus& octopus,
-            const std::vector<Shark>& sharks) const;
+            const std::vector<Shark>& sharks) override;
+
+        void drawResult(bool playerWon, bool timedOut) override;
 
     private:
         void printDebugInfo(const Octopus& octopus) const;

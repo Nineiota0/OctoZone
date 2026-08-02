@@ -1,9 +1,9 @@
 #include <chrono>
 #include <algorithm>
-#include <cstdlib>
-#include <iostream>
+#include <memory>
 #include <thread>
 
+#include "octozone/ConsoleRenderer.hpp"
 #include "octozone/Game.hpp"
 #include "octozone/MapGenerator.hpp"
 
@@ -26,8 +26,13 @@ namespace octozone
     }
 
     Game::Game()
+        : Game(std::make_unique<ConsoleRenderer>())
+    {
+    }
+
+    Game::Game(std::unique_ptr<IRenderer> renderer)
         : grid_(25, 25),
-          renderer_(),
+          renderer_(std::move(renderer)),
           octopus_({24, 0}, {0, 24})
     {
         GeneratedMap generatedMap = MapGenerator::generate(25, 25);
@@ -48,25 +53,16 @@ namespace octozone
     {
         while (!gameOver_)
         {
-            std::system("cls");
-
+            renderer_->clear();
             render();
             resolveTurn();
 
             std::this_thread::sleep_for(std::chrono::milliseconds(400));
         }
 
-        std::system("cls");
+        renderer_->clear();
         render();
-
-        if (playerWon_)
-        {
-            std::cout << "Octopus escaped! You win!\n";
-        }
-        else
-        {
-            std::cout << "Octopus caught! Game over.\n";
-        }
+        renderer_->drawResult(playerWon_, timedOut_);
     }
 
     void Game::update()
@@ -83,6 +79,16 @@ namespace octozone
         // 4. Sharks update awareness/state and move.
         // 5. Collision, including position swaps, is resolved.
         // 6. Goal is resolved after capture checks.
+        ++turnCount_;
+
+        if (turnCount_ > maxTurns_)
+        {
+            gameOver_ = true;
+            playerWon_ = false;
+            timedOut_ = true;
+            return;
+        }
+
         refreshSharkChases();
 
         Position previousOctopusPosition = octopus_.getPosition();
@@ -144,8 +150,7 @@ namespace octozone
 
     void Game::render()
     {
-        renderer_.draw(grid_, octopus_, sharks_);
-        std::cout << '\n';
+        renderer_->draw(grid_, octopus_, sharks_);
     }
 
     void Game::refreshSharkChases()

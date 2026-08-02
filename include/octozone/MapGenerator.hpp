@@ -4,6 +4,7 @@
 #include "octozone/Path.hpp"
 #include "octozone/Position.hpp"
 
+#include <random>
 #include <vector>
 
 namespace octozone
@@ -26,15 +27,23 @@ namespace octozone
     {
     public:
         static GeneratedMap generate(int rows, int cols);
+        static GeneratedMap generate(int rows, int cols, unsigned int seed);
 
     private:
-        static Position randomPosition(int rows, int cols);
-        static Position randomEdgePosition(int rows, int cols);
+        static Position randomPosition(
+            int rows,
+            int cols,
+            std::mt19937& rng);
+        static Position randomEdgePosition(
+            int rows,
+            int cols,
+            std::mt19937& rng);
         static int manhattanDistance(const Position& a, const Position& b);
 
         static Path createSharkPatrolRoute(
             const Grid& grid,
-            const Position& sharkStart);
+            const Position& sharkStart,
+            std::mt19937& rng);
 
         static bool canUsePatrolPosition(
             const Grid& grid,
@@ -50,6 +59,9 @@ namespace octozone
             Path& route,
             const Position& direction,
             int length);
+
+        static bool isValidGeneratedMap(
+            const GeneratedMap& map);
 
         static bool containsPosition(
             const std::vector<GeneratedShark>& sharks,

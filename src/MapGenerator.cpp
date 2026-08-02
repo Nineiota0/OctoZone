@@ -2,40 +2,48 @@
 #include "octozone/Pathfinder.hpp"
 
 #include <cstdlib>
-#include <ctime>
+#include <random>
+#include <stdexcept>
 
 namespace octozone
 {
     GeneratedMap MapGenerator::generate(int rows, int cols)
     {
-        static bool seeded = false;
+        std::random_device randomDevice;
+        return generate(rows, cols, randomDevice());
+    }
 
-        if (!seeded)
-        {
-            std::srand(static_cast<unsigned int>(std::time(nullptr)));
-            seeded = true;
-        }
+    GeneratedMap MapGenerator::generate(int rows, int cols, unsigned int seed)
+    {
+        constexpr int maxGenerationAttempts = 1000;
+        std::mt19937 rng(seed);
 
-        while (true)
+        for (int attempt = 0; attempt < maxGenerationAttempts; ++attempt)
         {
             Grid grid(rows, cols);
 
-            Position goal = randomEdgePosition(rows, cols);
-            Position octopusStart = randomEdgePosition(rows, cols);
+            Position goal = randomEdgePosition(rows, cols, rng);
+            Position octopusStart = randomEdgePosition(rows, cols, rng);
 
             int minimumStartDistance = 12;
+            int startAttempts = 0;
 
             while (octopusStart == goal ||
                    manhattanDistance(octopusStart, goal) < minimumStartDistance)
             {
-                octopusStart = randomEdgePosition(rows, cols);
+                octopusStart = randomEdgePosition(rows, cols, rng);
+
+                if (++startAttempts > maxGenerationAttempts)
+                {
+                    break;
+                }
             }
 
             int wallCount = 75;
 
             for (int i = 0; i < wallCount; ++i)
             {
-                Position wallPosition = randomPosition(rows, cols);
+                Position wallPosition = randomPosition(rows, cols, rng);
 
                 if (wallPosition != octopusStart &&
                     wallPosition != goal &&
@@ -49,7 +57,7 @@ namespace octozone
 
             for (int i = 0; i < seaweedCount; ++i)
             {
-                Position seaweedPosition = randomPosition(rows, cols);
+                Position seaweedPosition = randomPosition(rows, cols, rng);
 
                 if (seaweedPosition != octopusStart &&
                     seaweedPosition != goal &&
@@ -66,7 +74,8 @@ namespace octozone
 
             for (int i = 0; i < sharkCount; ++i)
             {
-                Position sharkStart = randomPosition(rows, cols);
+                Position sharkStart = randomPosition(rows, cols, rng);
+                int sharkStartAttempts = 0;
 
                 while (sharkStart == octopusStart ||
                        sharkStart == goal ||
@@ -74,10 +83,18 @@ namespace octozone
                        grid.getTile(sharkStart) == Tile::Seaweed ||
                        containsPosition(sharks, sharkStart))
                 {
-                    sharkStart = randomPosition(rows, cols);
+                    sharkStart = randomPosition(rows, cols, rng);
+
+                    if (++sharkStartAttempts > maxGenerationAttempts)
+                    {
+                        break;
+                    }
                 }
 
-                Path sharkPatrolRoute = createSharkPatrolRoute(grid, sharkStart);
+                Path sharkPatrolRoute = createSharkPatrolRoute(
+                    grid,
+                    sharkStart,
+                    rng);
 
                 sharks.push_back({
                     sharkStart,
@@ -85,49 +102,60 @@ namespace octozone
                 });
             }
 
-            Path path = Pathfinder::findPath(
+            GeneratedMap map{
                 grid,
                 octopusStart,
-                goal
-            );
+                goal,
+                sharks
+            };
 
-            if (!path.empty())
+            if (isValidGeneratedMap(map))
             {
-                return GeneratedMap{
-                    grid,
-                    octopusStart,
-                    goal,
-                    sharks
-                };
+                return map;
             }
         }
+
+        throw std::runtime_error("Failed to generate a valid map.");
     }
 
-    Position MapGenerator::randomPosition(int rows, int cols)
+    Position MapGenerator::randomPosition(
+        int rows,
+        int cols,
+        std::mt19937& rng)
     {
+        std::uniform_int_distribution<int> rowDistribution(0, rows - 1);
+        std::uniform_int_distribution<int> colDistribution(0, cols - 1);
+
         return Position{
-            std::rand() % rows,
-            std::rand() % cols
+            rowDistribution(rng),
+            colDistribution(rng)
         };
     }
 
-    Position MapGenerator::randomEdgePosition(int rows, int cols)
+    Position MapGenerator::randomEdgePosition(
+        int rows,
+        int cols,
+        std::mt19937& rng)
     {
-        int edge = std::rand() % 4;
+        std::uniform_int_distribution<int> edgeDistribution(0, 3);
+        std::uniform_int_distribution<int> rowDistribution(0, rows - 1);
+        std::uniform_int_distribution<int> colDistribution(0, cols - 1);
+
+        int edge = edgeDistribution(rng);
 
         switch (edge)
         {
             case 0:
-                return Position{0, std::rand() % cols};
+                return Position{0, colDistribution(rng)};
 
             case 1:
-                return Position{rows - 1, std::rand() % cols};
+                return Position{rows - 1, colDistribution(rng)};
 
             case 2:
-                return Position{std::rand() % rows, 0};
+                return Position{rowDistribution(rng), 0};
 
             case 3:
-                return Position{std::rand() % rows, cols - 1};
+                return Position{rowDistribution(rng), cols - 1};
         }
 
         return Position{0, 0};
@@ -140,7 +168,8 @@ namespace octozone
 
     Path MapGenerator::createSharkPatrolRoute(
         const Grid& grid,
-        const Position& sharkStart)
+        const Position& sharkStart,
+        std::mt19937& rng)
     {
         const Position directions[] = {
             {-1, 0},
@@ -154,53 +183,60 @@ namespace octozone
             Path route;
             route.push_back(sharkStart);
 
-            int pattern = std::rand() % 4;
+            std::uniform_int_distribution<int> directionDistribution(0, 3);
+            std::uniform_int_distribution<int> patternDistribution(0, 3);
+            std::uniform_int_distribution<int> shortLegDistribution(1, 3);
+            std::uniform_int_distribution<int> legDistribution(1, 4);
+            std::uniform_int_distribution<int> straightLegDistribution(2, 6);
+            std::uniform_int_distribution<int> randomWalkDistribution(4, 8);
+
+            int pattern = patternDistribution(rng);
 
             if (pattern == 0)
             {
                 appendPatrolLeg(
                     grid,
                     route,
-                    directions[std::rand() % 4],
-                    2 + std::rand() % 5);
+                    directions[directionDistribution(rng)],
+                    straightLegDistribution(rng));
             }
             else if (pattern == 1)
             {
-                Position firstDirection = directions[std::rand() % 4];
+                Position firstDirection = directions[directionDistribution(rng)];
                 Position secondDirection = firstDirection.row == 0
-                    ? directions[std::rand() % 2]
-                    : directions[2 + std::rand() % 2];
+                    ? directions[directionDistribution(rng) % 2]
+                    : directions[2 + directionDistribution(rng) % 2];
 
                 appendPatrolLeg(
                     grid,
                     route,
                     firstDirection,
-                    1 + std::rand() % 4);
+                    legDistribution(rng));
 
                 appendPatrolLeg(
                     grid,
                     route,
                     secondDirection,
-                    1 + std::rand() % 4);
+                    legDistribution(rng));
             }
             else if (pattern == 2)
             {
-                Position firstDirection = directions[std::rand() % 4];
+                Position firstDirection = directions[directionDistribution(rng)];
                 Position secondDirection = firstDirection.row == 0
-                    ? directions[std::rand() % 2]
-                    : directions[2 + std::rand() % 2];
+                    ? directions[directionDistribution(rng) % 2]
+                    : directions[2 + directionDistribution(rng) % 2];
 
-                appendPatrolLeg(grid, route, firstDirection, 1 + std::rand() % 3);
-                appendPatrolLeg(grid, route, secondDirection, 1 + std::rand() % 3);
-                appendPatrolLeg(grid, route, {-firstDirection.row, -firstDirection.col}, 1 + std::rand() % 3);
+                appendPatrolLeg(grid, route, firstDirection, shortLegDistribution(rng));
+                appendPatrolLeg(grid, route, secondDirection, shortLegDistribution(rng));
+                appendPatrolLeg(grid, route, {-firstDirection.row, -firstDirection.col}, shortLegDistribution(rng));
             }
             else
             {
-                int stepCount = 4 + std::rand() % 5;
+                int stepCount = randomWalkDistribution(rng);
 
                 for (int step = 0; step < stepCount; ++step)
                 {
-                    Position direction = directions[std::rand() % 4];
+                    Position direction = directions[directionDistribution(rng)];
                     appendPatrolStep(grid, route, direction);
                 }
             }
@@ -263,6 +299,72 @@ namespace octozone
         }
 
         return addedStep;
+    }
+
+    bool MapGenerator::isValidGeneratedMap(const GeneratedMap& map)
+    {
+        if (map.octopusStart == map.goal ||
+            !map.grid.isInBounds(map.octopusStart) ||
+            !map.grid.isInBounds(map.goal) ||
+            map.grid.getTile(map.octopusStart) == Tile::Wall ||
+            map.grid.getTile(map.goal) != Tile::Goal)
+        {
+            return false;
+        }
+
+        if (Pathfinder::findPath(
+                map.grid,
+                map.octopusStart,
+                map.goal).empty())
+        {
+            return false;
+        }
+
+        bool hasReachableSeaweed = false;
+
+        for (int row = 0; row < map.grid.getRows(); ++row)
+        {
+            for (int col = 0; col < map.grid.getCols(); ++col)
+            {
+                Position position{row, col};
+
+                if (map.grid.getTile(position) == Tile::Seaweed &&
+                    !Pathfinder::findPath(
+                        map.grid,
+                        map.octopusStart,
+                        position).empty())
+                {
+                    hasReachableSeaweed = true;
+                }
+            }
+        }
+
+        if (!hasReachableSeaweed)
+        {
+            return false;
+        }
+
+        for (const GeneratedShark& shark : map.sharks)
+        {
+            if (shark.start == map.octopusStart ||
+                shark.start == map.goal ||
+                !map.grid.isInBounds(shark.start) ||
+                map.grid.getTile(shark.start) == Tile::Wall ||
+                shark.patrolRoute.size() < 2)
+            {
+                return false;
+            }
+
+            for (Position patrolPosition : shark.patrolRoute)
+            {
+                if (!canUsePatrolPosition(map.grid, patrolPosition))
+                {
+                    return false;
+                }
+            }
+        }
+
+        return true;
     }
 
     bool MapGenerator::containsPosition(

@@ -1,15 +1,20 @@
 #include "octozone/ConsoleRenderer.hpp"
 #include "octozone/VisionSystem.hpp"
 
+#include <cstdlib>
 #include <iostream>
 
 namespace octozone
 {
+    void ConsoleRenderer::clear()
+    {
+        std::system("cls");
+    }
 
     void ConsoleRenderer::draw(
         const Grid& grid,
         const Octopus& octopus,
-        const std::vector<Shark>& sharks) const
+        const std::vector<Shark>& sharks)
     {
         Path visiblePositions;
 
@@ -82,6 +87,22 @@ namespace octozone
         }
 
         printDebugInfo(octopus);
+    }
+
+    void ConsoleRenderer::drawResult(bool playerWon, bool timedOut)
+    {
+        if (timedOut)
+        {
+            std::cout << "Octopus ran out of time! Game over.\n";
+        }
+        else if (playerWon)
+        {
+            std::cout << "Octopus escaped! You win!\n";
+        }
+        else
+        {
+            std::cout << "Octopus caught! Game over.\n";
+        }
     }
 
     void ConsoleRenderer::printDebugInfo(const Octopus& octopus) const
